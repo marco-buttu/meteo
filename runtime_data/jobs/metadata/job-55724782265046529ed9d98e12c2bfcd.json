@@ -1,0 +1,18 @@
+{
+  "created_at": "2026-04-10T11:06:15Z",
+  "error": {
+    "code": "ATM_SER_ERROR",
+    "message": "file not found"
+  },
+  "finished_at": "2026-04-10T11:06:15Z",
+  "has_plot": false,
+  "has_result": false,
+  "job_id": "job-55724782265046529ed9d98e12c2bfcd",
+  "operation": "legacy_meteo",
+  "started_at": "2026-04-10T11:06:15Z",
+  "status": "failed",
+  "validated_parameters": {
+    "date": "A2024030112",
+    "hour": 1
+  }
+}

@@ -1,0 +1,182 @@
+#! /usr/bin/octave-cli -qf
+% --- Dynamic path setup ---
+script_path = mfilename('fullpath');
+script_dir  = fileparts(script_path);
+root_dir    = fileparts(script_dir);
+
+addpath(script_dir);
+addpath(genpath(script_dir));
+
+arg_list = argv();
+
+cmd=arg_list{1};
+data=arg_list{2};
+db=upper(data(1));
+data=data(2:end);
+
+param;
+% --- Override paths from param.m ---
+mfile_a = fullfile(root_dir, 'data', 'mdata', filesep);
+mfile_b = fullfile(root_dir, 'data', 'oldmdata', filesep);
+
+switch db
+  case 'A'
+%   mfile=['/home/franco/wrf/data/mdata/',data,'.dat'];
+    mfile=[mfile_a,data,'.dat'];
+
+  case 'B'
+%   mfile=['/home/franco/wrf/data/oldmdata/',data,'.dat'];
+    mfile=[mfile_b,data,'.dat'];
+
+  otherwise
+    printf('Error: db not found');
+endswitch
+
+if(exist(mfile)==2)
+ switch(cmd)
+
+   case 'opacity'
+   hour=str2num(arg_list{3});
+   f=str2num(arg_list{4});
+   load(mfile);
+   nepoch=mdata.nh;
+   ti=mdata.step/24;
+   ep=mjd(str2num(data(1:4)),str2num(data(5:6)),str2num(data(7:8)),str2num(mdata.date(12:13)),0,0); 
+   tau=tauplot(mdata,f,false);
+   [Tmr,Tm1,Tm2,Tg]=Tmean(mdata,f);
+   if(hour==0) 
+    printf('epoch: %s\tfreq.(GHz):%8.3f\n',data,f);
+    printf('n.      mjd      \ttau(Np)      \tTmean(K)\n');
+    for i=1:nepoch
+      printf('%d\t%9.3f\t%f\t%f\n',i,ep,tau(i),Tmr(i)); 
+      ep=ep+ti;
+    end
+   else
+     if((hour<=nepoch)&&(hour>0))
+       printf('%f\t%f\n',tau(hour),Tmr(hour)); 
+     else
+       printf('Error: bad argument');
+     end
+   end
+
+  case 'meteo'
+   hour=str2num(arg_list{3});
+   load(mfile);
+   nepoch=mdata.nh;
+   ti=mdata.step/24;
+   ep=mjd(str2num(data(1:4)),str2num(data(5:6)),str2num(data(7:8)),str2num(mdata.date(12:13)),0,0);
+   if(hour==0) 
+    printf('epoch: %s\n',data);
+    printf('n.      mjd      \tT (K)      \tDPT (K)      \tRH (%%)      \tP (hPa)      \tU (m/s)      \tV (m/s)\n');
+    for i=1:nepoch
+     printf('%d\t%9.3f\t%f\t%f\t%f\t%f\t%f\t%f\n',i,ep,mdata.tmp(1,i),mdata.dpt(1,i),mdata.rh(1,i),mdata.prs(1,i),mdata.uwind(1,i),mdata.vwind(1,i)); 
+     ep=ep+ti;
+    end
+   else
+     if((hour<=nepoch)&&(hour>0))
+       printf('%f\t%f\t%f\t%f\t%f\t%f\n',mdata.tmp(1,hour),mdata.dpt(1,hour),mdata.rh(1,hour),mdata.prs(1,hour),mdata.uwind(1,hour),mdata.vwind(1,hour)); 
+     else
+       printf('Error: bad argument');
+     end
+   end
+
+  case 'rain'
+   hour=str2num(arg_list{3});
+   load(mfile);
+   nepoch=mdata.nh;
+   ti=mdata.step/24;
+   ep=mjd(str2num(data(1:4)),str2num(data(5:6)),str2num(data(7:8)),str2num(mdata.date(12:13)),0,0);
+   if(hour==0) 
+    printf('epoch: %s\n',data);
+    printf('n.      mjd      \tRAIN (mm)\n');
+    for i=1:nepoch
+     printf('%d\t%9.3f\t%f\n',i,ep,mdata.crain(i)); 
+     ep=ep+ti;
+    end
+   else
+     if((hour<=nepoch)&&(hour>0))
+       printf('%f\n',mdata.crain(hour)); 
+     else
+       printf('Error: bad argument');
+     end
+   end
+
+
+  case 'iwv'
+   hour=str2num(arg_list{3});
+   load(mfile);
+   nepoch=mdata.nh;
+   ti=mdata.step/24;
+   ep=mjd(str2num(data(1:4)),str2num(data(5:6)),str2num(data(7:8)),str2num(mdata.date(12:13)),0,0);
+   [IWV,ILW,ZDD,ZWD]=iwvplot(mdata,false);
+   if(hour==0) 
+    printf('epoch: %s\n',data);
+    printf('n.      mjd      \tIWV(mm)      \tILW(mm)      \tZDD(m)      \tZWD(m)      \tQ\n');
+    for i=1:nepoch
+     printf('%d\t%9.3f\t%f\t%f\t%f\t%f\t%f\n',i,ep,IWV(i),ILW(i),ZDD(i),ZWD(i),1E-3*IWV(i)/ZWD(i)); 
+     ep=ep+ti;
+    end
+   else
+     if((hour<=nepoch)&&(hour>0))
+       printf('%f\t%f\t%f\t%f\t%f\n',IWV(hour),ILW(hour),ZDD(hour),ZWD(hour),1E-3*IWV(hour)/ZWD(hour)); 
+     else
+       printf('Error: bad argument');
+     end
+   end
+
+   case 'tsys'
+   hour=str2num(arg_list{3});
+   f=str2num(arg_list{4});
+   Th=str2num(arg_list{5});
+   eta=str2num(arg_list{6});
+   Tr=str2num(arg_list{7});
+   load(mfile);
+   nepoch=mdata.nh;
+   ti=mdata.step/24;
+   ep=mjd(str2num(data(1:4)),str2num(data(5:6)),str2num(data(7:8)),str2num(mdata.date(12:13)),0,0); 
+   if(Th<6)
+    Th=6;
+   end
+   if(Th>90)
+    Th=90;
+   end
+   a=0.997;
+   b=0.426;
+   c=46.92;
+   d=5.7;
+   etaf=a-b./(1+(f/c)^d);
+   phi=90-Th;
+   X=1/cosd(phi);
+   Ri=10;
+   R0=1+1/Ri;
+   Tg=293;  
+   tau=tauplot(mdata,f,false);
+   [Tmr,Tm1,Tm2,Tg0]=Tmean(mdata,f);
+   if(hour==0) 
+    printf('epoch: %s\tfreq.(GHz):%8.3f\nTrec (K):%7.3f\tTheta (deg):%7.3f\teta:%7.3f\tetaf:%7.3f\n',data,f,Tr,Th,eta,etaf);
+    printf('n.      mjd             Tsys(K)         Tsys2(K)\n');
+    for i=1:nepoch
+      Ts=Tmr(i)*eta*(1-exp(-tau(i)*X))+(1-eta)*Tg0(i)+Tr;
+      Ts2=R0*(Tmr(i)*etaf*(1-exp(-tau(i)*X))+(1-etaf)*Tg+Tr);
+      printf('%d\t%9.3f\t%f\t%f\n',i,ep,Ts,Ts2); 
+      ep=ep+ti;
+    end
+   else
+    if((hour<=nepoch)&&(hour>0))
+     i=hour;
+     Ts=Tmr(i)*eta*(1-exp(-tau(i)*X))+(1-eta)*Tg0(i)+Tr;
+     Ts2=R0*(Tmr(i)*etaf*(1-exp(-tau(i)*X))+(1-etaf)*Tg+Tr);
+     printf('%f\t%f\n',Ts,Ts2);
+    else
+      printf('Error: bad argument');
+    end
+   end
+  otherwise
+   printf('Error: command not found');
+  endswitch
+else
+  printf('Error: file not found');
+end
+
+
+

@@ -1,0 +1,25 @@
+#!/bin/bash
+#
+if [ "$1" == "12" ]; then
+    H="12" 
+else    
+    H="00"
+fi    
+#
+DATE=`date --utc +%Y%m%d`$H
+#
+SOURCE='isac@storage-fb01.srt.inaf.it:/mnt/data03/isac/MoSarT/output/3km/'$DATE'/wrfoutcut.nc'
+DEST='/media/marco/shared/Work/inaf/doc/server_meteo/franco/wrf/data/ncfolder/'
+#
+sshpass -p 'isac-cnr@SRT2023' rsync -vah $SOURCE $DEST
+#
+/media/marco/shared/Work/inaf/doc/server_meteo/franco/wrf/ncl/cutscript/cutwrfout-inaf.sh
+cd /media/marco/shared/Work/inaf/doc/server_meteo/franco/wrf/scripts/
+octave-cli main_mdata.m
+octave-cli main_plot.m $DATE
+#
+octave-cli calctau2d.m
+octave-cli plottau2d.m
+#
+
+

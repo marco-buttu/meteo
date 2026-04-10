@@ -1,0 +1,16 @@
+{
+  "created_at": "2026-04-10T11:11:50Z",
+  "error": null,
+  "finished_at": "2026-04-10T11:11:50Z",
+  "has_plot": false,
+  "has_result": true,
+  "job_id": "job-a20f8b5d6533402c8b1dbc4e306542bf",
+  "operation": "legacy_opacity",
+  "started_at": "2026-04-10T11:11:50Z",
+  "status": "finished",
+  "validated_parameters": {
+    "date": "A2026011600",
+    "freq": 86.3,
+    "hour": 0
+  }
+}

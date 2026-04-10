@@ -1,0 +1,18 @@
+{
+  "created_at": "2026-04-10T11:06:18Z",
+  "error": {
+    "code": "ATM_SER_ERROR",
+    "message": "file not found"
+  },
+  "finished_at": "2026-04-10T11:06:18Z",
+  "has_plot": false,
+  "has_result": false,
+  "job_id": "job-2d4fd889fb8947b1b410987bf5fc8b5a",
+  "operation": "legacy_iwv",
+  "started_at": "2026-04-10T11:06:18Z",
+  "status": "failed",
+  "validated_parameters": {
+    "date": "A2099030112",
+    "hour": 1
+  }
+}

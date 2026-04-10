@@ -1,0 +1,18 @@
+{
+  "created_at": "2026-04-10T11:11:00Z",
+  "error": {
+    "code": "ATM_SER_ERROR",
+    "message": "bad argument"
+  },
+  "finished_at": "2026-04-10T11:11:00Z",
+  "has_plot": false,
+  "has_result": false,
+  "job_id": "job-43b1de0ac1be4142ac120099886c71e6",
+  "operation": "legacy_meteo",
+  "started_at": "2026-04-10T11:11:00Z",
+  "status": "failed",
+  "validated_parameters": {
+    "date": "A2026011600",
+    "hour": 999
+  }
+}

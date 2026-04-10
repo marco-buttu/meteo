@@ -1,0 +1,15 @@
+{
+  "created_at": "2026-04-10T11:10:03Z",
+  "error": null,
+  "finished_at": "2026-04-10T11:10:03Z",
+  "has_plot": false,
+  "has_result": true,
+  "job_id": "job-c5f5a5c4218642bbb569683efd074995",
+  "operation": "legacy_rain",
+  "started_at": "2026-04-10T11:10:03Z",
+  "status": "finished",
+  "validated_parameters": {
+    "date": "A2026011600",
+    "hour": 1
+  }
+}
