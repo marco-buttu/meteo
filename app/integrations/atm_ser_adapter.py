@@ -5,7 +5,7 @@ import re
 import subprocess
 from typing import Any, Callable, Dict, List, Tuple
 
-from app.config import ATM_SER_PATH, OCTAVE_BIN, OCTAVE_TIMEOUT_SECONDS
+from app.config import ATM_SER_PATH, DATA_DIR, OCTAVE_BIN, OCTAVE_TIMEOUT_SECONDS
 from app.domain.exceptions import (
     OperationExecutionError,
     OperationOutputError,
@@ -19,6 +19,8 @@ LegacyParser = Callable[[List[str], Dict[str, Any]], Dict[str, Any]]
 def run_atm_ser(operation: str, parameters: Dict[str, Any]) -> Dict[str, Any]:
     cmd = _build_command(operation, parameters)
     atm_dir = os.path.dirname(str(ATM_SER_PATH))
+    env = os.environ.copy()
+    env['DATA_DIR'] = str(DATA_DIR)
 
     try:
         completed = subprocess.run(
@@ -28,6 +30,7 @@ def run_atm_ser(operation: str, parameters: Dict[str, Any]) -> Dict[str, Any]:
             timeout=OCTAVE_TIMEOUT_SECONDS,
             check=False,
             cwd=atm_dir,
+            env=env,
         )
     except subprocess.TimeoutExpired as exc:
         raise OperationTimeoutError(
