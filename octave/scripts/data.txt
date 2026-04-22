@@ -1,0 +1,519 @@
+netcdf MoSarT_RAIN {
+dimensions:
+	Time = UNLIMITED ; // (73 currently)
+	south_north = 1 ;
+	west_east = 1 ;
+variables:
+	float RAINNC(Time, south_north, west_east) ;
+		RAINNC:FieldType = 104 ;
+		RAINNC:MemoryOrder = "XY " ;
+		RAINNC:description = "ACCUMULATED TOTAL GRID SCALE PRECIPITATION" ;
+		RAINNC:units = "mm" ;
+		RAINNC:stagger = "" ;
+		RAINNC:coordinates = "XLONG XLAT XTIME" ;
+	float XLAT(Time, south_north, west_east) ;
+		XLAT:FieldType = 104 ;
+		XLAT:MemoryOrder = "XY " ;
+		XLAT:description = "LATITUDE, SOUTH IS NEGATIVE" ;
+		XLAT:units = "degree_north" ;
+		XLAT:stagger = "" ;
+		XLAT:coordinates = "XLONG XLAT" ;
+	float XLONG(Time, south_north, west_east) ;
+		XLONG:FieldType = 104 ;
+		XLONG:MemoryOrder = "XY " ;
+		XLONG:description = "LONGITUDE, WEST IS NEGATIVE" ;
+		XLONG:units = "degree_east" ;
+		XLONG:stagger = "" ;
+		XLONG:coordinates = "XLONG XLAT" ;
+	float XTIME(Time) ;
+		XTIME:FieldType = 104 ;
+		XTIME:MemoryOrder = "0  " ;
+		XTIME:description = "minutes since 2026-04-08 00:00:00" ;
+		XTIME:units = "minutes since 2026-04-08 00:00:00" ;
+		XTIME:stagger = "" ;
+
+// global attributes:
+		:TITLE = " OUTPUT FROM WRF V4.6.1 MODEL" ;
+		:START_DATE = "2026-04-08_00:00:00" ;
+		:SIMULATION_START_DATE = "2026-04-08_00:00:00" ;
+		:WEST-EAST_GRID_DIMENSION = 130 ;
+		:SOUTH-NORTH_GRID_DIMENSION = 130 ;
+		:BOTTOM-TOP_GRID_DIMENSION = 45 ;
+		:DX = 3000.f ;
+		:DY = 3000.f ;
+		:AERCU_OPT = 0 ;
+		:AERCU_FCT = 1.f ;
+		:IDEAL_CASE = 0 ;
+		:DIFF_6TH_SLOPEOPT = 0 ;
+		:AUTO_LEVELS_OPT = 2 ;
+		:DIFF_6TH_THRESH = 0.1f ;
+		:DZBOT = 50.f ;
+		:DZSTRETCH_S = 1.3f ;
+		:DZSTRETCH_U = 1.1f ;
+		:SKEBS_ON = 0 ;
+		:USE_Q_DIABATIC = 0 ;
+		:GRIDTYPE = "C" ;
+		:DIFF_OPT = 1 ;
+		:KM_OPT = 4 ;
+		:DAMP_OPT = 3 ;
+		:DAMPCOEF = 0.2f ;
+		:KHDIF = 0.f ;
+		:KVDIF = 0.f ;
+		:MP_PHYSICS = 6 ;
+		:RA_LW_PHYSICS = 1 ;
+		:RA_SW_PHYSICS = 1 ;
+		:SF_SFCLAY_PHYSICS = 1 ;
+		:SF_SURFACE_PHYSICS = 4 ;
+		:BL_PBL_PHYSICS = 1 ;
+		:CU_PHYSICS = 0 ;
+		:SF_LAKE_PHYSICS = 0 ;
+		:SURFACE_INPUT_SOURCE = 3 ;
+		:SST_UPDATE = 0 ;
+		:GHG_INPUT = 1 ;
+		:GRID_FDDA = 0 ;
+		:GFDDA_INTERVAL_M = 0 ;
+		:GFDDA_END_H = 0 ;
+		:GRID_SFDDA = 0 ;
+		:SGFDDA_INTERVAL_M = 0 ;
+		:SGFDDA_END_H = 0 ;
+		:HYPSOMETRIC_OPT = 2 ;
+		:USE_THETA_M = 1 ;
+		:GWD_OPT = 1 ;
+		:SF_URBAN_PHYSICS = 0 ;
+		:SF_SURFACE_MOSAIC = 0 ;
+		:SF_OCEAN_PHYSICS = 0 ;
+		:SLUCM_DISTRIBUTED_DRAG = 0 ;
+		:DISTRIBUTED_AHE_OPT = 0 ;
+		:SHCU_PHYSICS = 0 ;
+		:MFSHCONV = 0 ;
+		:FEEDBACK = 1 ;
+		:SMOOTH_OPTION = 2 ;
+		:SWRAD_SCAT = 1.f ;
+		:W_DAMPING = 1 ;
+		:DT = 9.f ;
+		:ADAPT_DT_START = 9.f ;
+		:ADAPT_DT_MAX = 15.f ;
+		:ADAPT_DT_MIN = 6.f ;
+		:RADT = 9.f ;
+		:BLDT = 0.f ;
+		:CUDT = 0.f ;
+		:AER_OPT = 0 ;
+		:SWINT_OPT = 0 ;
+		:AER_TYPE = 1 ;
+		:AER_AOD550_OPT = 1 ;
+		:AER_ANGEXP_OPT = 1 ;
+		:AER_SSA_OPT = 1 ;
+		:AER_ASY_OPT = 1 ;
+		:AER_AOD550_VAL = 0.12f ;
+		:AER_ANGEXP_VAL = 1.3f ;
+		:AER_SSA_VAL = 0.85f ;
+		:AER_ASY_VAL = 0.9f ;
+		:MOIST_ADV_OPT = 1 ;
+		:SCALAR_ADV_OPT = 1 ;
+		:TKE_ADV_OPT = 1 ;
+		:DIFF_6TH_OPT = 2 ;
+		:DIFF_6TH_FACTOR = 0.12f ;
+		:OBS_NUDGE_OPT = 0 ;
+		:BUCKET_MM = -1.f ;
+		:BUCKET_J = -1.f ;
+		:PREC_ACC_DT = 0.f ;
+		:ISFTCFLX = 0 ;
+		:ISHALLOW = 0 ;
+		:ISFFLX = 1 ;
+		:ICLOUD = 1 ;
+		:ICLOUD_CU = 0 ;
+		:TRACER_PBLMIX = 1 ;
+		:SCALAR_PBLMIX = 0 ;
+		:YSU_TOPDOWN_PBLMIX = 1 ;
+		:GRAV_SETTLING = 0 ;
+		:CLDOVRLP = 2 ;
+		:IDCOR = 0 ;
+		:OPT_SFC = 1 ;
+		:DVEG = 4 ;
+		:OPT_CRS = 1 ;
+		:OPT_BTR = 1 ;
+		:OPT_RUN = 3 ;
+		:OPT_FRZ = 1 ;
+		:OPT_INF = 1 ;
+		:OPT_RAD = 3 ;
+		:OPT_ALB = 2 ;
+		:OPT_SNF = 1 ;
+		:OPT_TBOT = 2 ;
+		:OPT_STC = 1 ;
+		:OPT_GLA = 1 ;
+		:OPT_RSF = 1 ;
+		:OPT_SOIL = 1 ;
+		:OPT_PEDO = 1 ;
+		:OPT_CROP = 0 ;
+		:OPT_IRR = 0 ;
+		:OPT_IRRM = 0 ;
+		:DFI_OPT = 0 ;
+		:NTASKS_X = 6 ;
+		:NTASKS_Y = 8 ;
+		:NTASKS_TOTAL = 48 ;
+		:SIMULATION_INITIALIZATION_TYPE = "REAL-DATA CASE" ;
+		:WEST-EAST_PATCH_START_UNSTAG = 1 ;
+		:WEST-EAST_PATCH_END_UNSTAG = 129 ;
+		:WEST-EAST_PATCH_START_STAG = 1 ;
+		:WEST-EAST_PATCH_END_STAG = 130 ;
+		:SOUTH-NORTH_PATCH_START_UNSTAG = 1 ;
+		:SOUTH-NORTH_PATCH_END_UNSTAG = 129 ;
+		:SOUTH-NORTH_PATCH_START_STAG = 1 ;
+		:SOUTH-NORTH_PATCH_END_STAG = 130 ;
+		:BOTTOM-TOP_PATCH_START_UNSTAG = 1 ;
+		:BOTTOM-TOP_PATCH_END_UNSTAG = 44 ;
+		:BOTTOM-TOP_PATCH_START_STAG = 1 ;
+		:BOTTOM-TOP_PATCH_END_STAG = 45 ;
+		:GRID_ID = 2 ;
+		:PARENT_ID = 1 ;
+		:I_PARENT_START = 38 ;
+		:J_PARENT_START = 48 ;
+		:PARENT_GRID_RATIO = 3 ;
+		:CEN_LAT = 39.89195f ;
+		:CEN_LON = 9.054352f ;
+		:TRUELAT1 = 30.f ;
+		:TRUELAT2 = 60.f ;
+		:MOAD_CEN_LAT = 39.35001f ;
+		:STAND_LON = 9.f ;
+		:POLE_LAT = 90.f ;
+		:POLE_LON = 0.f ;
+		:GMT = 0.f ;
+		:JULYR = 2026 ;
+		:JULDAY = 98 ;
+		:MAP_PROJ = 1 ;
+		:MAP_PROJ_CHAR = "Lambert Conformal" ;
+		:MMINLU = "MODIFIED_IGBP_MODIS_NOAH" ;
+		:NUM_LAND_CAT = 21 ;
+		:ISWATER = 17 ;
+		:ISLAKE = 21 ;
+		:ISICE = 15 ;
+		:ISURBAN = 13 ;
+		:ISOILWATER = 14 ;
+		:HYBRID_OPT = 0 ;
+		:ETAC = 0.f ;
+		:NCO = "netCDF Operators version 5.2.1 (Homepage = http://nco.sf.net, Code = http://github.com/nco/nco, Citation = 10.1016/j.envsoft.2008.03.004)" ;
+		:history = "Wed Apr  8 09:54:21 2026: ncks -v RAINNC,XLONG,XLAT,XTIME -d south_north,50 -d west_east,69 /media/marco/shared/Work/inaf/doc/server_meteo/franco/wrf/data/ncfolder/wrfoutcut.nc MoSarT_RAIN.nc\n",
+			"Wed Apr  8 00:54:36 2026: ncks -A filenew3.nc wrfoutcut.nc\n",
+			"Wed Apr  8 00:54:24 2026: ncap2 -v -O -s dir=180+((360/6.28)*(atan2(U10,V10))) wrfoutcut.nc filenew3.nc\n",
+			"Wed Apr  8 00:54:12 2026: ncks -A filenew2.nc wrfoutcut.nc\n",
+			"Wed Apr  8 00:53:08 2026: ncap2 -v -O -s mag=(sqrt(pow(U10,2)+pow(V10,2))) wrfoutcut.nc filenew2.nc\n",
+			"Wed Apr  8 00:50:47 2026: ncrcat wrfout_d02_2026-04-08_00:00:00 wrfout_d02_2026-04-08_01:00:00 wrfout_d02_2026-04-08_02:00:00 wrfout_d02_2026-04-08_03:00:00 wrfout_d02_2026-04-08_04:00:00 wrfout_d02_2026-04-08_05:00:00 wrfout_d02_2026-04-08_06:00:00 wrfout_d02_2026-04-08_07:00:00 wrfout_d02_2026-04-08_08:00:00 wrfout_d02_2026-04-08_09:00:00 wrfout_d02_2026-04-08_10:00:00 wrfout_d02_2026-04-08_11:00:00 wrfout_d02_2026-04-08_12:00:00 wrfout_d02_2026-04-08_13:00:00 wrfout_d02_2026-04-08_14:00:00 wrfout_d02_2026-04-08_15:00:00 wrfout_d02_2026-04-08_16:00:00 wrfout_d02_2026-04-08_17:00:00 wrfout_d02_2026-04-08_18:00:00 wrfout_d02_2026-04-08_19:00:00 wrfout_d02_2026-04-08_20:00:00 wrfout_d02_2026-04-08_21:00:00 wrfout_d02_2026-04-08_22:00:00 wrfout_d02_2026-04-08_23:00:00 wrfout_d02_2026-04-09_00:00:00 wrfout_d02_2026-04-09_01:00:00 wrfout_d02_2026-04-09_02:00:00 wrfout_d02_2026-04-09_03:00:00 wrfout_d02_2026-04-09_04:00:00 wrfout_d02_2026-04-09_05:00:00 wrfout_d02_2026-04-09_06:00:00 wrfout_d02_2026-04-09_07:00:00 wrfout_d02_2026-04-09_08:00:00 wrfout_d02_2026-04-09_09:00:00 wrfout_d02_2026-04-09_10:00:00 wrfout_d02_2026-04-09_11:00:00 wrfout_d02_2026-04-09_12:00:00 wrfout_d02_2026-04-09_13:00:00 wrfout_d02_2026-04-09_14:00:00 wrfout_d02_2026-04-09_15:00:00 wrfout_d02_2026-04-09_16:00:00 wrfout_d02_2026-04-09_17:00:00 wrfout_d02_2026-04-09_18:00:00 wrfout_d02_2026-04-09_19:00:00 wrfout_d02_2026-04-09_20:00:00 wrfout_d02_2026-04-09_21:00:00 wrfout_d02_2026-04-09_22:00:00 wrfout_d02_2026-04-09_23:00:00 wrfout_d02_2026-04-10_00:00:00 wrfout_d02_2026-04-10_01:00:00 wrfout_d02_2026-04-10_02:00:00 wrfout_d02_2026-04-10_03:00:00 wrfout_d02_2026-04-10_04:00:00 wrfout_d02_2026-04-10_05:00:00 wrfout_d02_2026-04-10_06:00:00 wrfout_d02_2026-04-10_07:00:00 wrfout_d02_2026-04-10_08:00:00 wrfout_d02_2026-04-10_09:00:00 wrfout_d02_2026-04-10_10:00:00 wrfout_d02_2026-04-10_11:00:00 wrfout_d02_2026-04-10_12:00:00 wrfout_d02_2026-04-10_13:00:00 wrfout_d02_2026-04-10_14:00:00 wrfout_d02_2026-04-10_15:00:00 wrfout_d02_2026-04-10_16:00:00 wrfout_d02_2026-04-10_17:00:00 wrfout_d02_2026-04-10_18:00:00 wrfout_d02_2026-04-10_19:00:00 wrfout_d02_2026-04-10_20:00:00 wrfout_d02_2026-04-10_21:00:00 wrfout_d02_2026-04-10_22:00:00 wrfout_d02_2026-04-10_23:00:00 wrfout_d02_2026-04-11_00:00:00 wrfoutcut.nc\n",
+			"Wed Apr  8 00:39:39 2026: ncks -7 6wrfout_d02_2026-04-08_00:00:00 7wrfout_d02_2026-04-08_00:00:00\n",
+			"Wed Apr  8 00:39:37 2026: ncks -5 3wrfout_d02_2026-04-08_00:00:00 6wrfout_d02_2026-04-08_00:00:00\n",
+			"Wed Apr  8 00:39:35 2026: ncks -3 wrfout_d02_2026-04-08_00:00:00 3wrfout_d02_2026-04-08_00:00:00" ;
+		:history_of_appended_files = "Wed Apr  8 00:54:36 2026: Appended file filenew3.nc had following \"history\" attribute:\n",
+			"Wed Apr  8 00:54:24 2026: ncap2 -v -O -s dir=180+((360/6.28)*(atan2(U10,V10))) wrfoutcut.nc filenew3.nc\n",
+			"Wed Apr  8 00:54:12 2026: ncks -A filenew2.nc wrfoutcut.nc\n",
+			"Wed Apr  8 00:53:08 2026: ncap2 -v -O -s mag=(sqrt(pow(U10,2)+pow(V10,2))) wrfoutcut.nc filenew2.nc\n",
+			"Wed Apr  8 00:50:47 2026: ncrcat wrfout_d02_2026-04-08_00:00:00 wrfout_d02_2026-04-08_01:00:00 wrfout_d02_2026-04-08_02:00:00 wrfout_d02_2026-04-08_03:00:00 wrfout_d02_2026-04-08_04:00:00 wrfout_d02_2026-04-08_05:00:00 wrfout_d02_2026-04-08_06:00:00 wrfout_d02_2026-04-08_07:00:00 wrfout_d02_2026-04-08_08:00:00 wrfout_d02_2026-04-08_09:00:00 wrfout_d02_2026-04-08_10:00:00 wrfout_d02_2026-04-08_11:00:00 wrfout_d02_2026-04-08_12:00:00 wrfout_d02_2026-04-08_13:00:00 wrfout_d02_2026-04-08_14:00:00 wrfout_d02_2026-04-08_15:00:00 wrfout_d02_2026-04-08_16:00:00 wrfout_d02_2026-04-08_17:00:00 wrfout_d02_2026-04-08_18:00:00 wrfout_d02_2026-04-08_19:00:00 wrfout_d02_2026-04-08_20:00:00 wrfout_d02_2026-04-08_21:00:00 wrfout_d02_2026-04-08_22:00:00 wrfout_d02_2026-04-08_23:00:00 wrfout_d02_2026-04-09_00:00:00 wrfout_d02_2026-04-09_01:00:00 wrfout_d02_2026-04-09_02:00:00 wrfout_d02_2026-04-09_03:00:00 wrfout_d02_2026-04-09_04:00:00 wrfout_d02_2026-04-09_05:00:00 wrfout_d02_2026-04-09_06:00:00 wrfout_d02_2026-04-09_07:00:00 wrfout_d02_2026-04-09_08:00:00 wrfout_d02_2026-04-09_09:00:00 wrfout_d02_2026-04-09_10:00:00 wrfout_d02_2026-04-09_11:00:00 wrfout_d02_2026-04-09_12:00:00 wrfout_d02_2026-04-09_13:00:00 wrfout_d02_2026-04-09_14:00:00 wrfout_d02_2026-04-09_15:00:00 wrfout_d02_2026-04-09_16:00:00 wrfout_d02_2026-04-09_17:00:00 wrfout_d02_2026-04-09_18:00:00 wrfout_d02_2026-04-09_19:00:00 wrfout_d02_2026-04-09_20:00:00 wrfout_d02_2026-04-09_21:00:00 wrfout_d02_2026-04-09_22:00:00 wrfout_d02_2026-04-09_23:00:00 wrfout_d02_2026-04-10_00:00:00 wrfout_d02_2026-04-10_01:00:00 wrfout_d02_2026-04-10_02:00:00 wrfout_d02_2026-04-10_03:00:00 wrfout_d02_2026-04-10_04:00:00 wrfout_d02_2026-04-10_05:00:00 wrfout_d02_2026-04-10_06:00:00 wrfout_d02_2026-04-10_07:00:00 wrfout_d02_2026-04-10_08:00:00 wrfout_d02_2026-04-10_09:00:00 wrfout_d02_2026-04-10_10:00:00 wrfout_d02_2026-04-10_11:00:00 wrfout_d02_2026-04-10_12:00:00 wrfout_d02_2026-04-10_13:00:00 wrfout_d02_2026-04-10_14:00:00 wrfout_d02_2026-04-10_15:00:00 wrfout_d02_2026-04-10_16:00:00 wrfout_d02_2026-04-10_17:00:00 wrfout_d02_2026-04-10_18:00:00 wrfout_d02_2026-04-10_19:00:00 wrfout_d02_2026-04-10_20:00:00 wrfout_d02_2026-04-10_21:00:00 wrfout_d02_2026-04-10_22:00:00 wrfout_d02_2026-04-10_23:00:00 wrfout_d02_2026-04-11_00:00:00 wrfoutcut.nc\n",
+			"Wed Apr  8 00:39:39 2026: ncks -7 6wrfout_d02_2026-04-08_00:00:00 7wrfout_d02_2026-04-08_00:00:00\n",
+			"Wed Apr  8 00:39:37 2026: ncks -5 3wrfout_d02_2026-04-08_00:00:00 6wrfout_d02_2026-04-08_00:00:00\n",
+			"Wed Apr  8 00:39:35 2026: ncks -3 wrfout_d02_2026-04-08_00:00:00 3wrfout_d02_2026-04-08_00:00:00\n",
+			"Wed Apr  8 00:54:12 2026: Appended file filenew2.nc had following \"history\" attribute:\n",
+			"Wed Apr  8 00:53:08 2026: ncap2 -v -O -s mag=(sqrt(pow(U10,2)+pow(V10,2))) wrfoutcut.nc filenew2.nc\n",
+			"Wed Apr  8 00:50:47 2026: ncrcat wrfout_d02_2026-04-08_00:00:00 wrfout_d02_2026-04-08_01:00:00 wrfout_d02_2026-04-08_02:00:00 wrfout_d02_2026-04-08_03:00:00 wrfout_d02_2026-04-08_04:00:00 wrfout_d02_2026-04-08_05:00:00 wrfout_d02_2026-04-08_06:00:00 wrfout_d02_2026-04-08_07:00:00 wrfout_d02_2026-04-08_08:00:00 wrfout_d02_2026-04-08_09:00:00 wrfout_d02_2026-04-08_10:00:00 wrfout_d02_2026-04-08_11:00:00 wrfout_d02_2026-04-08_12:00:00 wrfout_d02_2026-04-08_13:00:00 wrfout_d02_2026-04-08_14:00:00 wrfout_d02_2026-04-08_15:00:00 wrfout_d02_2026-04-08_16:00:00 wrfout_d02_2026-04-08_17:00:00 wrfout_d02_2026-04-08_18:00:00 wrfout_d02_2026-04-08_19:00:00 wrfout_d02_2026-04-08_20:00:00 wrfout_d02_2026-04-08_21:00:00 wrfout_d02_2026-04-08_22:00:00 wrfout_d02_2026-04-08_23:00:00 wrfout_d02_2026-04-09_00:00:00 wrfout_d02_2026-04-09_01:00:00 wrfout_d02_2026-04-09_02:00:00 wrfout_d02_2026-04-09_03:00:00 wrfout_d02_2026-04-09_04:00:00 wrfout_d02_2026-04-09_05:00:00 wrfout_d02_2026-04-09_06:00:00 wrfout_d02_2026-04-09_07:00:00 wrfout_d02_2026-04-09_08:00:00 wrfout_d02_2026-04-09_09:00:00 wrfout_d02_2026-04-09_10:00:00 wrfout_d02_2026-04-09_11:00:00 wrfout_d02_2026-04-09_12:00:00 wrfout_d02_2026-04-09_13:00:00 wrfout_d02_2026-04-09_14:00:00 wrfout_d02_2026-04-09_15:00:00 wrfout_d02_2026-04-09_16:00:00 wrfout_d02_2026-04-09_17:00:00 wrfout_d02_2026-04-09_18:00:00 wrfout_d02_2026-04-09_19:00:00 wrfout_d02_2026-04-09_20:00:00 wrfout_d02_2026-04-09_21:00:00 wrfout_d02_2026-04-09_22:00:00 wrfout_d02_2026-04-09_23:00:00 wrfout_d02_2026-04-10_00:00:00 wrfout_d02_2026-04-10_01:00:00 wrfout_d02_2026-04-10_02:00:00 wrfout_d02_2026-04-10_03:00:00 wrfout_d02_2026-04-10_04:00:00 wrfout_d02_2026-04-10_05:00:00 wrfout_d02_2026-04-10_06:00:00 wrfout_d02_2026-04-10_07:00:00 wrfout_d02_2026-04-10_08:00:00 wrfout_d02_2026-04-10_09:00:00 wrfout_d02_2026-04-10_10:00:00 wrfout_d02_2026-04-10_11:00:00 wrfout_d02_2026-04-10_12:00:00 wrfout_d02_2026-04-10_13:00:00 wrfout_d02_2026-04-10_14:00:00 wrfout_d02_2026-04-10_15:00:00 wrfout_d02_2026-04-10_16:00:00 wrfout_d02_2026-04-10_17:00:00 wrfout_d02_2026-04-10_18:00:00 wrfout_d02_2026-04-10_19:00:00 wrfout_d02_2026-04-10_20:00:00 wrfout_d02_2026-04-10_21:00:00 wrfout_d02_2026-04-10_22:00:00 wrfout_d02_2026-04-10_23:00:00 wrfout_d02_2026-04-11_00:00:00 wrfoutcut.nc\n",
+			"Wed Apr  8 00:39:39 2026: ncks -7 6wrfout_d02_2026-04-08_00:00:00 7wrfout_d02_2026-04-08_00:00:00\n",
+			"Wed Apr  8 00:39:37 2026: ncks -5 3wrfout_d02_2026-04-08_00:00:00 6wrfout_d02_2026-04-08_00:00:00\n",
+			"Wed Apr  8 00:39:35 2026: ncks -3 wrfout_d02_2026-04-08_00:00:00 3wrfout_d02_2026-04-08_00:00:00\n",
+			"" ;
+data:
+
+ RAINNC =
+  0,  // RAINNC(0,0,0)
+    0,  // RAINNC(1,0,0)
+    0,  // RAINNC(2,0,0)
+    0,  // RAINNC(3,0,0)
+    0,  // RAINNC(4,0,0)
+    0,  // RAINNC(5,0,0)
+    0,  // RAINNC(6,0,0)
+    0,  // RAINNC(7,0,0)
+    0,  // RAINNC(8,0,0)
+    0,  // RAINNC(9,0,0)
+    0,  // RAINNC(10,0,0)
+    0,  // RAINNC(11,0,0)
+    0,  // RAINNC(12,0,0)
+    0,  // RAINNC(13,0,0)
+    0,  // RAINNC(14,0,0)
+    0,  // RAINNC(15,0,0)
+    0,  // RAINNC(16,0,0)
+    0,  // RAINNC(17,0,0)
+    0,  // RAINNC(18,0,0)
+    0,  // RAINNC(19,0,0)
+    0,  // RAINNC(20,0,0)
+    0,  // RAINNC(21,0,0)
+    0,  // RAINNC(22,0,0)
+    0,  // RAINNC(23,0,0)
+    0,  // RAINNC(24,0,0)
+    0,  // RAINNC(25,0,0)
+    0,  // RAINNC(26,0,0)
+    0,  // RAINNC(27,0,0)
+    0,  // RAINNC(28,0,0)
+    0,  // RAINNC(29,0,0)
+    0,  // RAINNC(30,0,0)
+    0,  // RAINNC(31,0,0)
+    0,  // RAINNC(32,0,0)
+    0,  // RAINNC(33,0,0)
+    0,  // RAINNC(34,0,0)
+    0,  // RAINNC(35,0,0)
+    0,  // RAINNC(36,0,0)
+    0,  // RAINNC(37,0,0)
+    0,  // RAINNC(38,0,0)
+    0,  // RAINNC(39,0,0)
+    0,  // RAINNC(40,0,0)
+    0,  // RAINNC(41,0,0)
+    0,  // RAINNC(42,0,0)
+    0,  // RAINNC(43,0,0)
+    0,  // RAINNC(44,0,0)
+    0,  // RAINNC(45,0,0)
+    0,  // RAINNC(46,0,0)
+    0,  // RAINNC(47,0,0)
+    0,  // RAINNC(48,0,0)
+    0,  // RAINNC(49,0,0)
+    0,  // RAINNC(50,0,0)
+    0,  // RAINNC(51,0,0)
+    0,  // RAINNC(52,0,0)
+    0,  // RAINNC(53,0,0)
+    0,  // RAINNC(54,0,0)
+    0,  // RAINNC(55,0,0)
+    0,  // RAINNC(56,0,0)
+    0,  // RAINNC(57,0,0)
+    0,  // RAINNC(58,0,0)
+    0,  // RAINNC(59,0,0)
+    0,  // RAINNC(60,0,0)
+    0,  // RAINNC(61,0,0)
+    0,  // RAINNC(62,0,0)
+    0,  // RAINNC(63,0,0)
+    0,  // RAINNC(64,0,0)
+    0,  // RAINNC(65,0,0)
+    0,  // RAINNC(66,0,0)
+    0,  // RAINNC(67,0,0)
+    0,  // RAINNC(68,0,0)
+    0,  // RAINNC(69,0,0)
+    0,  // RAINNC(70,0,0)
+    0,  // RAINNC(71,0,0)
+    0;  // RAINNC(72,0,0)
+    
+ XLAT =
+  39.50256,  // XLAT(0,0,0)
+    39.50256,  // XLAT(1,0,0)
+    39.50256,  // XLAT(2,0,0)
+    39.50256,  // XLAT(3,0,0)
+    39.50256,  // XLAT(4,0,0)
+    39.50256,  // XLAT(5,0,0)
+    39.50256,  // XLAT(6,0,0)
+    39.50256,  // XLAT(7,0,0)
+    39.50256,  // XLAT(8,0,0)
+    39.50256,  // XLAT(9,0,0)
+    39.50256,  // XLAT(10,0,0)
+    39.50256,  // XLAT(11,0,0)
+    39.50256,  // XLAT(12,0,0)
+    39.50256,  // XLAT(13,0,0)
+    39.50256,  // XLAT(14,0,0)
+    39.50256,  // XLAT(15,0,0)
+    39.50256,  // XLAT(16,0,0)
+    39.50256,  // XLAT(17,0,0)
+    39.50256,  // XLAT(18,0,0)
+    39.50256,  // XLAT(19,0,0)
+    39.50256,  // XLAT(20,0,0)
+    39.50256,  // XLAT(21,0,0)
+    39.50256,  // XLAT(22,0,0)
+    39.50256,  // XLAT(23,0,0)
+    39.50256,  // XLAT(24,0,0)
+    39.50256,  // XLAT(25,0,0)
+    39.50256,  // XLAT(26,0,0)
+    39.50256,  // XLAT(27,0,0)
+    39.50256,  // XLAT(28,0,0)
+    39.50256,  // XLAT(29,0,0)
+    39.50256,  // XLAT(30,0,0)
+    39.50256,  // XLAT(31,0,0)
+    39.50256,  // XLAT(32,0,0)
+    39.50256,  // XLAT(33,0,0)
+    39.50256,  // XLAT(34,0,0)
+    39.50256,  // XLAT(35,0,0)
+    39.50256,  // XLAT(36,0,0)
+    39.50256,  // XLAT(37,0,0)
+    39.50256,  // XLAT(38,0,0)
+    39.50256,  // XLAT(39,0,0)
+    39.50256,  // XLAT(40,0,0)
+    39.50256,  // XLAT(41,0,0)
+    39.50256,  // XLAT(42,0,0)
+    39.50256,  // XLAT(43,0,0)
+    39.50256,  // XLAT(44,0,0)
+    39.50256,  // XLAT(45,0,0)
+    39.50256,  // XLAT(46,0,0)
+    39.50256,  // XLAT(47,0,0)
+    39.50256,  // XLAT(48,0,0)
+    39.50256,  // XLAT(49,0,0)
+    39.50256,  // XLAT(50,0,0)
+    39.50256,  // XLAT(51,0,0)
+    39.50256,  // XLAT(52,0,0)
+    39.50256,  // XLAT(53,0,0)
+    39.50256,  // XLAT(54,0,0)
+    39.50256,  // XLAT(55,0,0)
+    39.50256,  // XLAT(56,0,0)
+    39.50256,  // XLAT(57,0,0)
+    39.50256,  // XLAT(58,0,0)
+    39.50256,  // XLAT(59,0,0)
+    39.50256,  // XLAT(60,0,0)
+    39.50256,  // XLAT(61,0,0)
+    39.50256,  // XLAT(62,0,0)
+    39.50256,  // XLAT(63,0,0)
+    39.50256,  // XLAT(64,0,0)
+    39.50256,  // XLAT(65,0,0)
+    39.50256,  // XLAT(66,0,0)
+    39.50256,  // XLAT(67,0,0)
+    39.50256,  // XLAT(68,0,0)
+    39.50256,  // XLAT(69,0,0)
+    39.50256,  // XLAT(70,0,0)
+    39.50256,  // XLAT(71,0,0)
+    39.50256;  // XLAT(72,0,0)
+    
+ XLONG =
+  9.23407,  // XLONG(0,0,0)
+    9.23407,  // XLONG(1,0,0)
+    9.23407,  // XLONG(2,0,0)
+    9.23407,  // XLONG(3,0,0)
+    9.23407,  // XLONG(4,0,0)
+    9.23407,  // XLONG(5,0,0)
+    9.23407,  // XLONG(6,0,0)
+    9.23407,  // XLONG(7,0,0)
+    9.23407,  // XLONG(8,0,0)
+    9.23407,  // XLONG(9,0,0)
+    9.23407,  // XLONG(10,0,0)
+    9.23407,  // XLONG(11,0,0)
+    9.23407,  // XLONG(12,0,0)
+    9.23407,  // XLONG(13,0,0)
+    9.23407,  // XLONG(14,0,0)
+    9.23407,  // XLONG(15,0,0)
+    9.23407,  // XLONG(16,0,0)
+    9.23407,  // XLONG(17,0,0)
+    9.23407,  // XLONG(18,0,0)
+    9.23407,  // XLONG(19,0,0)
+    9.23407,  // XLONG(20,0,0)
+    9.23407,  // XLONG(21,0,0)
+    9.23407,  // XLONG(22,0,0)
+    9.23407,  // XLONG(23,0,0)
+    9.23407,  // XLONG(24,0,0)
+    9.23407,  // XLONG(25,0,0)
+    9.23407,  // XLONG(26,0,0)
+    9.23407,  // XLONG(27,0,0)
+    9.23407,  // XLONG(28,0,0)
+    9.23407,  // XLONG(29,0,0)
+    9.23407,  // XLONG(30,0,0)
+    9.23407,  // XLONG(31,0,0)
+    9.23407,  // XLONG(32,0,0)
+    9.23407,  // XLONG(33,0,0)
+    9.23407,  // XLONG(34,0,0)
+    9.23407,  // XLONG(35,0,0)
+    9.23407,  // XLONG(36,0,0)
+    9.23407,  // XLONG(37,0,0)
+    9.23407,  // XLONG(38,0,0)
+    9.23407,  // XLONG(39,0,0)
+    9.23407,  // XLONG(40,0,0)
+    9.23407,  // XLONG(41,0,0)
+    9.23407,  // XLONG(42,0,0)
+    9.23407,  // XLONG(43,0,0)
+    9.23407,  // XLONG(44,0,0)
+    9.23407,  // XLONG(45,0,0)
+    9.23407,  // XLONG(46,0,0)
+    9.23407,  // XLONG(47,0,0)
+    9.23407,  // XLONG(48,0,0)
+    9.23407,  // XLONG(49,0,0)
+    9.23407,  // XLONG(50,0,0)
+    9.23407,  // XLONG(51,0,0)
+    9.23407,  // XLONG(52,0,0)
+    9.23407,  // XLONG(53,0,0)
+    9.23407,  // XLONG(54,0,0)
+    9.23407,  // XLONG(55,0,0)
+    9.23407,  // XLONG(56,0,0)
+    9.23407,  // XLONG(57,0,0)
+    9.23407,  // XLONG(58,0,0)
+    9.23407,  // XLONG(59,0,0)
+    9.23407,  // XLONG(60,0,0)
+    9.23407,  // XLONG(61,0,0)
+    9.23407,  // XLONG(62,0,0)
+    9.23407,  // XLONG(63,0,0)
+    9.23407,  // XLONG(64,0,0)
+    9.23407,  // XLONG(65,0,0)
+    9.23407,  // XLONG(66,0,0)
+    9.23407,  // XLONG(67,0,0)
+    9.23407,  // XLONG(68,0,0)
+    9.23407,  // XLONG(69,0,0)
+    9.23407,  // XLONG(70,0,0)
+    9.23407,  // XLONG(71,0,0)
+    9.23407;  // XLONG(72,0,0)
+    
+ XTIME = 0,   // XTIME(0)
+    60,   // XTIME(1)
+    120,   // XTIME(2)
+    180,   // XTIME(3)
+    240,   // XTIME(4)
+    300,   // XTIME(5)
+    360,   // XTIME(6)
+    420,   // XTIME(7)
+    480,   // XTIME(8)
+    540,   // XTIME(9)
+    600,   // XTIME(10)
+    660,   // XTIME(11)
+    720,   // XTIME(12)
+    780,   // XTIME(13)
+    840,   // XTIME(14)
+    900,   // XTIME(15)
+    960,   // XTIME(16)
+    1020,   // XTIME(17)
+    1080,   // XTIME(18)
+    1140,   // XTIME(19)
+    1200,   // XTIME(20)
+    1260,   // XTIME(21)
+    1320,   // XTIME(22)
+    1380,   // XTIME(23)
+    1440,   // XTIME(24)
+    1500,   // XTIME(25)
+    1560,   // XTIME(26)
+    1620,   // XTIME(27)
+    1680,   // XTIME(28)
+    1740,   // XTIME(29)
+    1800,   // XTIME(30)
+    1860,   // XTIME(31)
+    1920,   // XTIME(32)
+    1980,   // XTIME(33)
+    2040,   // XTIME(34)
+    2100,   // XTIME(35)
+    2160,   // XTIME(36)
+    2220,   // XTIME(37)
+    2280,   // XTIME(38)
+    2340,   // XTIME(39)
+    2400,   // XTIME(40)
+    2460,   // XTIME(41)
+    2520,   // XTIME(42)
+    2580,   // XTIME(43)
+    2640,   // XTIME(44)
+    2700,   // XTIME(45)
+    2760,   // XTIME(46)
+    2820,   // XTIME(47)
+    2880,   // XTIME(48)
+    2940,   // XTIME(49)
+    3000,   // XTIME(50)
+    3060,   // XTIME(51)
+    3120,   // XTIME(52)
+    3180,   // XTIME(53)
+    3240,   // XTIME(54)
+    3300,   // XTIME(55)
+    3360,   // XTIME(56)
+    3420,   // XTIME(57)
+    3480,   // XTIME(58)
+    3540,   // XTIME(59)
+    3600,   // XTIME(60)
+    3660,   // XTIME(61)
+    3720,   // XTIME(62)
+    3780,   // XTIME(63)
+    3840,   // XTIME(64)
+    3900,   // XTIME(65)
+    3960,   // XTIME(66)
+    4020,   // XTIME(67)
+    4080,   // XTIME(68)
+    4140,   // XTIME(69)
+    4200,   // XTIME(70)
+    4260,   // XTIME(71)
+    4320;  // XTIME(72)
+    }
