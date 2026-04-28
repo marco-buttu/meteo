@@ -3,3 +3,4 @@ redis>=5.0,<6.0
 rq>=1.15,<2.0
 python-dotenv>=1.0,<2.0
 invoke>=2.2,<3.0
+requests
