@@ -8,14 +8,7 @@ from invoke import task
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent
-RUNTIME_DATA_DIR = PROJECT_ROOT / 'runtime_data'
-JOB_STORAGE_DIR = RUNTIME_DATA_DIR / 'jobs'
-PLOT_STORAGE_DIR = RUNTIME_DATA_DIR / 'plots'
-
-
-def _ensure_runtime_dirs() -> None:
-    JOB_STORAGE_DIR.mkdir(parents=True, exist_ok=True)
-    PLOT_STORAGE_DIR.mkdir(parents=True, exist_ok=True)
+SCRIPTS_DIR = PROJECT_ROOT / 'scripts'
 
 
 def _is_redis_running(host: str = '127.0.0.1', port: int = 6379) -> bool:
@@ -23,25 +16,27 @@ def _is_redis_running(host: str = '127.0.0.1', port: int = 6379) -> bool:
         return s.connect_ex((host, port)) == 0
 
 
+def _run_script(c, script_name: str, args: str = '') -> None:
+    script_path = SCRIPTS_DIR / script_name
+    c.run(f'bash {script_path} {args}'.strip(), pty=True)
+
+
 @task
 def install(c) -> None:
     """Install project dependencies."""
-    c.run('pip install -r requirements.txt', pty=True)
+    _run_script(c, 'setup_app.sh', '--skip-env-check')
 
 
 @task
 def setup(c) -> None:
-    """Prepare local environment."""
-    _ensure_runtime_dirs()
-    print(f'Project root: {PROJECT_ROOT}')
-    print(f'Job storage dir: {JOB_STORAGE_DIR}')
-    print(f'Plot storage dir: {PLOT_STORAGE_DIR}')
+    """Prepare local environment without reinstalling dependencies."""
+    _run_script(c, 'setup_app.sh', '--skip-install')
 
 
 @task
 def check(c) -> None:
     """Run quick project checks."""
-    _ensure_runtime_dirs()
+    _run_script(c, 'check_env.sh')
 
     checks = {
         'run.py exists': (PROJECT_ROOT / 'run.py').exists(),
@@ -83,6 +78,7 @@ def smoke(c) -> None:
     """Run end-to-end smoke tests (requires app, worker, redis already running)."""
     print('Running smoke tests...')
     c.run('python scripts/smoke_tests.py', pty=True)
+
 
 @task(pre=[setup])
 def up(c) -> None:

@@ -121,24 +121,31 @@ octave-cli --version
 
 ---
 
-## 5. Create a Python virtual environment
+## 5. Prepare the application
+
+The repository includes a shared application setup script:
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
+scripts/setup_app.sh
 ```
 
-## 6. Install Python dependencies
+The script prepares the Python environment, installs the packages listed in
+`requirements.txt`, validates `.env`, and creates the runtime directories used
+for job metadata, results, and plots.
+
+This script does not install system packages and does not start Redis, the Flask
+application, or the worker.
+
+If you prefer to run the setup through Invoke, use:
 
 ```bash
-pip install -r requirements.txt
-```
-
-## 7. Prepare the project environment
-
-```bash
+inv install
 inv setup
 ```
+
+`inv install` installs Python dependencies through the shared setup script.
+`inv setup` validates the environment and prepares runtime directories without
+reinstalling dependencies.
 
 If you open a new shell later, activate the virtual environment again and rerun:
 
@@ -1514,6 +1521,35 @@ The long-term direction of the project is to preserve the same public API while 
 The project may require environment variables depending on your local configuration and backend paths.
 
 In this project, local environment variables are typically stored in `.env`.
+
+The shared setup scripts validate the variables used by the application:
+
+```text
+REDIS_URL
+RQ_QUEUE_NAME
+JOB_STORAGE_DIR
+PLOT_STORAGE_DIR
+DATA_DIR
+ATM_SER_PATH
+OCTAVE_BIN
+OCTAVE_TIMEOUT_SECONDS
+FLASK_HOST
+FLASK_PORT
+FLASK_DEBUG
+```
+
+Use this command to validate the environment without reinstalling dependencies:
+
+```bash
+scripts/check_env.sh
+```
+
+For image builds or other situations where external volumes are not mounted yet,
+you can skip checks for external paths:
+
+```bash
+scripts/check_env.sh --skip-external-paths
+```
 
 ---
 
