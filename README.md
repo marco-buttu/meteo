@@ -20,6 +20,21 @@ The application currently supports both:
 - **native operations**
 - **legacy-compatible operations** exposed through the same API
 
+The repository includes three deployment entrypoints:
+
+- local native Linux deployment with `systemd`
+- VirtualBox VM deployment through Vagrant
+- Docker placeholder, not implemented yet
+
+For deployment, start from:
+
+```bash
+./deploy.sh
+```
+
+For the detailed native Linux deployment guide, see
+[Native Linux deployment with systemd](docs/deployment-native-linux.md).
+
 Current legacy-compatible operations:
 
 - `legacy_iwv`
@@ -126,7 +141,7 @@ octave-cli --version
 The repository includes a shared application setup script:
 
 ```bash
-scripts/setup_app.sh
+scripts/deployment/local/setup_app.sh
 ```
 
 The script prepares the Python environment, installs the packages listed in
@@ -134,7 +149,8 @@ The script prepares the Python environment, installs the packages listed in
 for job metadata, results, and plots.
 
 This script does not install system packages and does not start Redis, the Flask
-application, or the worker.
+application, or the worker. The same script is used by both local development
+and native Linux deployment.
 
 If you prefer to run the setup through Invoke, use:
 
@@ -152,6 +168,279 @@ If you open a new shell later, activate the virtual environment again and rerun:
 ```bash
 source .venv/bin/activate
 inv setup
+```
+
+---
+
+## Deployment
+
+The repository provides one main deployment entrypoint:
+
+```bash
+./deploy.sh
+```
+
+The entrypoint lets you choose:
+
+```text
+1) Local machine
+2) VirtualBox VM through Vagrant
+3) Docker - not implemented yet
+```
+
+You can also run a target directly:
+
+```bash
+./deploy.sh local
+./deploy.sh virtualbox
+./deploy.sh docker
+```
+
+The Docker target is currently only a placeholder and exits with a clear message.
+
+---
+
+## Local native Linux deployment with systemd
+
+Use this target when you want to deploy directly on the current Debian, Ubuntu,
+or Linux Mint machine.
+
+Interactive mode:
+
+```bash
+./deploy.sh
+```
+
+Direct mode:
+
+```bash
+./deploy.sh local
+```
+
+This runs the local deployment orchestrator:
+
+```bash
+scripts/deployment/local/deploy_local.sh
+```
+
+The orchestrator calls the existing native deployment scripts in this order:
+
+```text
+scripts/deployment/local/install_system_deps_debian.sh
+scripts/deployment/local/setup_app.sh
+scripts/deployment/local/install_systemd_services.sh --start
+```
+
+The local deployment:
+
+- installs the required APT packages
+- creates or updates `.venv`
+- installs Python dependencies
+- validates `.env`
+- installs and enables `meteo-app.service` and `meteo-worker.service`
+- starts both services by default
+
+For a managed `systemd` service, set this in `.env`:
+
+```env
+FLASK_DEBUG=0
+```
+
+If the service must be reachable from another machine, also set:
+
+```env
+FLASK_HOST=0.0.0.0
+```
+
+To install the services without starting them immediately:
+
+```bash
+scripts/deployment/local/deploy_local.sh --no-start
+```
+
+To preview the generated services:
+
+```bash
+sudo scripts/deployment/local/install_systemd_services.sh --dry-run
+```
+
+To uninstall a local test deployment:
+
+```bash
+sudo scripts/deployment/local/uninstall_native_linux.sh --yes --remove-runtime-data --remove-system-deps
+```
+
+Read the full native deployment guide here:
+
+```text
+docs/deployment-native-linux.md
+```
+
+---
+
+## VirtualBox VM deployment with Vagrant
+
+Use this target when you want to test the native deployment inside a clean
+Ubuntu VM managed by VirtualBox.
+
+Required tools on the host:
+
+- VirtualBox
+- Vagrant
+- Python 3, used by the host-side smoke tests after deployment
+
+The deployment asks for the host data directory interactively:
+
+```bash
+./deploy.sh virtualbox
+```
+
+Example input:
+
+```text
+/home/marco/wrf/data
+```
+
+That host directory is mounted inside the VM as:
+
+```text
+/dati
+```
+
+During provisioning, the VM `.env` is configured with:
+
+```env
+DATA_DIR=/dati
+FLASK_HOST=0.0.0.0
+FLASK_PORT=5000
+FLASK_DEBUG=0
+REDIS_URL=redis://127.0.0.1:6379/0
+```
+
+After provisioning, the API should be reachable from the host at:
+
+```text
+http://127.0.0.1:5000
+```
+
+You can also run the VM deployment non-interactively:
+
+```bash
+HOST_DATA_DIR=/home/marco/wrf/data ./deploy.sh virtualbox
+```
+
+If host port `5000` is already busy, choose another host port:
+
+```bash
+HOST_DATA_DIR=/home/marco/wrf/data HOST_APP_PORT=5001 ./deploy.sh virtualbox
+```
+
+Then use:
+
+```text
+http://127.0.0.1:5001
+```
+
+Optional VM settings:
+
+```bash
+HOST_DATA_DIR=/home/marco/wrf/data VM_MEMORY=4096 VM_CPUS=2 ./deploy.sh virtualbox
+```
+
+The Vagrant deployment:
+
+- creates a VirtualBox VM from the configured Ubuntu box
+- forwards host port `HOST_APP_PORT` to guest port `5000`
+- mounts `HOST_DATA_DIR` into the guest as `GUEST_DATA_DIR`, default `/dati`
+- copies the current project checkout from `/vagrant` to `/opt/meteo`
+- rewrites the VM `.env` for the guest environment
+- runs the same native deployment scripts used by local deployment
+- starts the `meteo-app` and `meteo-worker` systemd services
+- runs the smoke tests from the host against the forwarded API URL
+
+The project is copied to `/opt/meteo` instead of being run directly from the
+shared `/vagrant` folder. This better resembles deployment on a real Linux host.
+
+### Host-side smoke tests after VM deployment
+
+By default, the VirtualBox deployment runs the smoke tests from the host after
+`vagrant up` completes:
+
+```bash
+BASE_URL=http://127.0.0.1:5000 python scripts/smoke_tests.py
+```
+
+The script chooses a Python interpreter in this order:
+
+1. `SMOKE_TEST_PYTHON`, if explicitly provided.
+2. `.venv/bin/python`, if it exists and can import `requests`.
+3. `python3`, if it can import `requests`.
+4. A dedicated host virtual environment created at `.deployment/host-smoke-venv`.
+
+This means the smoke tests verify not only the services inside the VM, but also
+that the host can reach the application through the port forwarding.
+
+To skip smoke tests:
+
+```bash
+HOST_DATA_DIR=/home/marco/wrf/data RUN_SMOKE_TESTS=0 ./deploy.sh virtualbox
+```
+
+To use a specific Python interpreter for the smoke tests:
+
+```bash
+HOST_DATA_DIR=/home/marco/wrf/data \
+SMOKE_TEST_PYTHON=/path/to/python \
+./deploy.sh virtualbox
+```
+
+To change where the host smoke-test virtual environment is created:
+
+```bash
+HOST_DATA_DIR=/home/marco/wrf/data \
+HOST_SMOKE_VENV=/tmp/meteo-smoke-venv \
+./deploy.sh virtualbox
+```
+
+Useful Vagrant commands:
+
+```bash
+vagrant ssh
+vagrant status
+vagrant halt
+vagrant destroy
+```
+
+`HOST_DATA_DIR` is required for commands that create or reprovision the VM, such
+as `vagrant up`, `vagrant provision`, and `vagrant reload`. It is not required
+for commands such as `vagrant ssh`, `vagrant status`, `vagrant halt`, or
+`vagrant destroy`.
+
+Inside the VM, inspect services with:
+
+```bash
+systemctl status redis-server
+systemctl status meteo-app
+systemctl status meteo-worker
+journalctl -u meteo-app -n 100 --no-pager
+journalctl -u meteo-worker -n 100 --no-pager
+```
+
+---
+## Docker deployment
+
+Docker deployment is intentionally not implemented yet.
+
+The menu includes the Docker target only as a placeholder:
+
+```bash
+./deploy.sh docker
+```
+
+It prints:
+
+```text
+Docker deployment is not implemented yet.
 ```
 
 ---
@@ -201,11 +490,57 @@ http://127.0.0.1:5000
 
 ---
 
+## Web UI for legacy commands
+
+The application includes a minimal browser-based interface for legacy commands.
+After the server is running, open:
+
+```text
+http://127.0.0.1:5000/ui
+```
+
+If the application is running inside the Vagrant VM, use the same URL from the
+host because the VM forwards host port `5000` to guest port `5000`.
+If you changed `HOST_APP_PORT`, replace `5000` with the selected host port.
+
+The web UI lets a non-technical user:
+
+- choose a legacy command from a list
+- see which parameters are required for that command
+- see the expected format and examples for each parameter
+- submit the command without manually writing JSON or using `curl`
+- inspect the generated legacy command string
+- see the created `job_id`
+- monitor the job status automatically
+- inspect the final JSON result or error
+
+Supported legacy commands in the UI:
+
+```text
+iwv,YYYYMMDD,hour
+opacity,YYYYMMDD,hour,freq
+meteo,YYYYMMDD,hour
+rain,YYYYMMDD,hour
+tsys,YYYYMMDD,hour,freq,theta,eta,trec
+```
+
+The date must be entered as `YYYYMMDD`, without the leading `A`. The backend
+parser adds the `A` prefix internally when it builds the operation parameters.
+
+The command catalog used by the UI is also exposed as JSON:
+
+```text
+GET /legacy/commands
+```
+
 ## Smoke tests
 
 The repository includes a smoke test runner that verifies the main application flow.
 
-Run it in a new terminal:
+For VirtualBox deployment, smoke tests are run automatically from the host at the
+end of `./deploy.sh virtualbox`, unless `RUN_SMOKE_TESTS=0` is set.
+
+For manual/local execution, run them in a new terminal:
 
 ```bash
 source .venv/bin/activate
@@ -406,7 +741,13 @@ curl -sS "$BASE_URL/jobs/JOB_ID/result"
 
 ## Stopping the system
 
-To stop the application, press `Ctrl+C` in each terminal.
+For a manual three-terminal development run, press `Ctrl+C` in each terminal.
+
+For a native Linux `systemd` deployment, run:
+
+```bash
+sudo systemctl stop meteo-app meteo-worker
+```
 
 ---
 
@@ -467,6 +808,9 @@ Public endpoints:
 - `GET /jobs/<job_id>`
 - `GET /jobs/<job_id>/result`
 - `GET /jobs/<job_id>/plot`
+- `POST /legacy/command`
+- `GET /legacy/commands`
+- `GET /ui`
 
 ---
 
@@ -1541,14 +1885,14 @@ FLASK_DEBUG
 Use this command to validate the environment without reinstalling dependencies:
 
 ```bash
-scripts/check_env.sh
+scripts/deployment/common/check_env.sh
 ```
 
 For image builds or other situations where external volumes are not mounted yet,
 you can skip checks for external paths:
 
 ```bash
-scripts/check_env.sh --skip-external-paths
+scripts/deployment/common/check_env.sh --skip-external-paths
 ```
 
 ---

@@ -9,6 +9,9 @@ from invoke import task
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 SCRIPTS_DIR = PROJECT_ROOT / 'scripts'
+DEPLOYMENT_DIR = SCRIPTS_DIR / 'deployment'
+LOCAL_DEPLOYMENT_DIR = DEPLOYMENT_DIR / 'local'
+COMMON_DEPLOYMENT_DIR = DEPLOYMENT_DIR / 'common'
 
 
 def _is_redis_running(host: str = '127.0.0.1', port: int = 6379) -> bool:
@@ -16,27 +19,26 @@ def _is_redis_running(host: str = '127.0.0.1', port: int = 6379) -> bool:
         return s.connect_ex((host, port)) == 0
 
 
-def _run_script(c, script_name: str, args: str = '') -> None:
-    script_path = SCRIPTS_DIR / script_name
+def _run_script(c, script_path: Path, args: str = '') -> None:
     c.run(f'bash {script_path} {args}'.strip(), pty=True)
 
 
 @task
 def install(c) -> None:
     """Install project dependencies."""
-    _run_script(c, 'setup_app.sh', '--skip-env-check')
+    _run_script(c, LOCAL_DEPLOYMENT_DIR / 'setup_app.sh', '--skip-env-check')
 
 
 @task
 def setup(c) -> None:
     """Prepare local environment without reinstalling dependencies."""
-    _run_script(c, 'setup_app.sh', '--skip-install')
+    _run_script(c, LOCAL_DEPLOYMENT_DIR / 'setup_app.sh', '--skip-install')
 
 
 @task
 def check(c) -> None:
     """Run quick project checks."""
-    _run_script(c, 'check_env.sh')
+    _run_script(c, COMMON_DEPLOYMENT_DIR / 'check_env.sh')
 
     checks = {
         'run.py exists': (PROJECT_ROOT / 'run.py').exists(),

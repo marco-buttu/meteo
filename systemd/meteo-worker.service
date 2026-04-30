@@ -1,0 +1,18 @@
+[Unit]
+Description=Meteo RQ worker
+After=network.target redis-server.service
+Wants=redis-server.service
+
+[Service]
+Type=simple
+User=__RUN_USER__
+Group=__RUN_GROUP__
+WorkingDirectory=__PROJECT_ROOT__
+EnvironmentFile=__ENV_FILE__
+Environment=PYTHONUNBUFFERED=1
+ExecStart=__PYTHON_BIN__ __PROJECT_ROOT__/worker.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,13 +1,22 @@
 from __future__ import annotations
 
-from flask import Flask, Response, current_app, jsonify, request
+from flask import Flask, Response, current_app, jsonify, render_template, request
 from werkzeug.exceptions import BadRequest
 
 from app.domain.exceptions import InvalidJsonError, InvalidRequestError
 from app.api.legacy_parser import parse_legacy_command, LegacyCommandError
+from app.api.legacy_commands import get_legacy_command_catalog
 
 
 def register_routes(app: Flask) -> None:
+    @app.route("/ui", methods=["GET"])
+    def legacy_command_ui():
+        return render_template("legacy_ui.html")
+
+    @app.route("/legacy/commands", methods=["GET"])
+    def get_legacy_commands():
+        return jsonify({"commands": get_legacy_command_catalog()}), 200
+
     @app.route("/jobs", methods=["POST"])
     def create_job():
         payload = _parse_create_job_payload()
