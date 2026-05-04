@@ -180,12 +180,31 @@ The repository provides one main deployment entrypoint:
 ./deploy.sh
 ```
 
-The entrypoint lets you choose:
+The entrypoint opens a deployment manager menu grouped by target environment:
 
 ```text
-1) Local machine
-2) VirtualBox VM through Vagrant
-3) Docker - not implemented yet
+Meteo deployment manager
+========================
+
+Local machine
+-------------
+  1) Deploy locally
+
+VirtualBox / Vagrant
+--------------------
+  2) Deploy to VirtualBox VM
+  3) Reinstall app inside existing VM
+  4) Fresh VirtualBox VM deployment
+  5) Start existing VM
+  6) Stop existing VM
+
+Docker
+------
+  7) Docker deployment
+
+Other
+-----
+  q) Quit
 ```
 
 You can also run a target directly:
@@ -193,6 +212,10 @@ You can also run a target directly:
 ```bash
 ./deploy.sh local
 ./deploy.sh virtualbox
+./deploy.sh vm-reinstall
+./deploy.sh vm-fresh
+./deploy.sh vm-start
+./deploy.sh vm-stop
 ./deploy.sh docker
 ```
 
@@ -280,7 +303,7 @@ docs/deployment-native-linux.md
 
 ## VirtualBox VM deployment with Vagrant
 
-Use this target when you want to test the native deployment inside a clean
+Use the VirtualBox targets when you want to test the native deployment inside an
 Ubuntu VM managed by VirtualBox.
 
 Required tools on the host:
@@ -289,13 +312,27 @@ Required tools on the host:
 - Vagrant
 - Python 3, used by the host-side smoke tests after deployment
 
-The deployment asks for the host data directory interactively:
+### Normal VM deployment
+
+Interactive mode:
+
+```bash
+./deploy.sh
+```
+
+Then choose:
+
+```text
+2) Deploy to VirtualBox VM
+```
+
+Direct mode:
 
 ```bash
 ./deploy.sh virtualbox
 ```
 
-Example input:
+The deployment asks for the host data directory interactively. Example input:
 
 ```text
 /home/marco/wrf/data
@@ -349,7 +386,7 @@ HOST_DATA_DIR=/home/marco/wrf/data VM_MEMORY=4096 VM_CPUS=2 ./deploy.sh virtualb
 
 The Vagrant deployment:
 
-- creates a VirtualBox VM from the configured Ubuntu box
+- creates or starts a VirtualBox VM from the configured Ubuntu box
 - forwards host port `HOST_APP_PORT` to guest port `5000`
 - mounts `HOST_DATA_DIR` into the guest as `GUEST_DATA_DIR`, default `/dati`
 - copies the current project checkout from `/vagrant` to `/opt/meteo`
@@ -361,29 +398,175 @@ The Vagrant deployment:
 The project is copied to `/opt/meteo` instead of being run directly from the
 shared `/vagrant` folder. This better resembles deployment on a real Linux host.
 
+### Saved Vagrant host configuration
+
+During the first VM deployment, the selected host configuration is saved in:
+
+```text
+.deployment/vagrant.env
+```
+
+The file stores values such as:
+
+```env
+HOST_DATA_DIR=/home/marco/wrf/data
+GUEST_DATA_DIR=/dati
+HOST_APP_PORT=5000
+```
+
+The `Vagrantfile` reads this file automatically. This means that after the first
+deployment, after rebooting the host, you can usually restart the VM with:
+
+```bash
+vagrant up
+vagrant ssh
+```
+
+without passing `HOST_DATA_DIR` again.
+
+Explicit environment variables still have priority. For example, this temporarily
+overrides the saved value:
+
+```bash
+HOST_DATA_DIR=/another/data/path vagrant up
+```
+
+The `.deployment/` directory is local host state and is ignored by Git.
+
+### Reinstall the app inside the existing VM
+
+Use this when the VM is fine and you only want to reinstall the application from
+the current project checkout. The VM is kept. Ubuntu, Redis, system packages,
+mounts and port forwarding are kept.
+
+Interactive mode:
+
+```bash
+./deploy.sh
+```
+
+Then choose:
+
+```text
+3) Reinstall app inside existing VM
+```
+
+Direct mode:
+
+```bash
+./deploy.sh vm-reinstall
+```
+
+This target runs:
+
+```bash
+scripts/deployment/virtualbox/reinstall_app.sh
+```
+
+It stops and removes the existing `meteo-app` and `meteo-worker` units inside the
+VM, removes `/opt/meteo`, copies the current project again, reprovisions the app,
+reinstalls the services, and restarts them.
+
+Smoke tests are run from the host at the end unless disabled:
+
+```bash
+RUN_SMOKE_TESTS=0 ./deploy.sh vm-reinstall
+```
+
+### Fresh VirtualBox VM deployment
+
+Use this when you want to recreate the VM from scratch. This destroys the Vagrant
+VM associated with the current project, removes `.vagrant`, and then runs the
+normal VirtualBox deployment again.
+
+Interactive mode:
+
+```bash
+./deploy.sh
+```
+
+Then choose:
+
+```text
+4) Fresh VirtualBox VM deployment
+```
+
+Direct mode:
+
+```bash
+./deploy.sh vm-fresh
+```
+
+The underlying script is:
+
+```bash
+scripts/deployment/virtualbox/fresh_deploy.sh
+```
+
+It asks for confirmation before destroying the VM. To skip the confirmation:
+
+```bash
+scripts/deployment/virtualbox/fresh_deploy.sh --yes
+```
+
+### Start and stop the existing VM
+
+After the host has been rebooted, the VM is usually stopped. Start it without
+reprovisioning:
+
+```bash
+./deploy.sh vm-start
+```
+
+or from the menu choose:
+
+```text
+5) Start existing VM
+```
+
+Stop the VM with:
+
+```bash
+./deploy.sh vm-stop
+```
+
+or from the menu choose:
+
+```text
+6) Stop existing VM
+```
+
+These commands are wrappers around:
+
+```bash
+vagrant up --no-provision
+vagrant halt
+```
+
 ### Host-side smoke tests after VM deployment
 
-By default, the VirtualBox deployment runs the smoke tests from the host after
-`vagrant up` completes:
+By default, the VirtualBox deployment and the app reinstall run the smoke tests
+from the host after the VM is ready:
 
 ```bash
 BASE_URL=http://127.0.0.1:5000 python scripts/smoke_tests.py
 ```
 
-The script chooses a Python interpreter in this order:
+The deployment script chooses a Python interpreter in this order:
 
 1. `SMOKE_TEST_PYTHON`, if explicitly provided.
 2. `.venv/bin/python`, if it exists and can import `requests`.
 3. `python3`, if it can import `requests`.
 4. A dedicated host virtual environment created at `.deployment/host-smoke-venv`.
 
-This means the smoke tests verify not only the services inside the VM, but also
-that the host can reach the application through the port forwarding.
+This verifies not only the services inside the VM, but also that the host can
+reach the application through port forwarding.
 
 To skip smoke tests:
 
 ```bash
 HOST_DATA_DIR=/home/marco/wrf/data RUN_SMOKE_TESTS=0 ./deploy.sh virtualbox
+RUN_SMOKE_TESTS=0 ./deploy.sh vm-reinstall
 ```
 
 To use a specific Python interpreter for the smoke tests:
@@ -410,11 +593,6 @@ vagrant status
 vagrant halt
 vagrant destroy
 ```
-
-`HOST_DATA_DIR` is required for commands that create or reprovision the VM, such
-as `vagrant up`, `vagrant provision`, and `vagrant reload`. It is not required
-for commands such as `vagrant ssh`, `vagrant status`, `vagrant halt`, or
-`vagrant destroy`.
 
 Inside the VM, inspect services with:
 
@@ -489,49 +667,6 @@ http://127.0.0.1:5000
 ```
 
 ---
-
-## Web UI for legacy commands
-
-The application includes a minimal browser-based interface for legacy commands.
-After the server is running, open:
-
-```text
-http://127.0.0.1:5000/ui
-```
-
-If the application is running inside the Vagrant VM, use the same URL from the
-host because the VM forwards host port `5000` to guest port `5000`.
-If you changed `HOST_APP_PORT`, replace `5000` with the selected host port.
-
-The web UI lets a non-technical user:
-
-- choose a legacy command from a list
-- see which parameters are required for that command
-- see the expected format and examples for each parameter
-- submit the command without manually writing JSON or using `curl`
-- inspect the generated legacy command string
-- see the created `job_id`
-- monitor the job status automatically
-- inspect the final JSON result or error
-
-Supported legacy commands in the UI:
-
-```text
-iwv,YYYYMMDD,hour
-opacity,YYYYMMDD,hour,freq
-meteo,YYYYMMDD,hour
-rain,YYYYMMDD,hour
-tsys,YYYYMMDD,hour,freq,theta,eta,trec
-```
-
-The date must be entered as `YYYYMMDD`, without the leading `A`. The backend
-parser adds the `A` prefix internally when it builds the operation parameters.
-
-The command catalog used by the UI is also exposed as JSON:
-
-```text
-GET /legacy/commands
-```
 
 ## Smoke tests
 
@@ -808,9 +943,6 @@ Public endpoints:
 - `GET /jobs/<job_id>`
 - `GET /jobs/<job_id>/result`
 - `GET /jobs/<job_id>/plot`
-- `POST /legacy/command`
-- `GET /legacy/commands`
-- `GET /ui`
 
 ---
 

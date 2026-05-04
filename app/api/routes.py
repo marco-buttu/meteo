@@ -9,8 +9,9 @@ from app.api.legacy_commands import get_legacy_command_catalog
 
 
 def register_routes(app: Flask) -> None:
+
     @app.route("/ui", methods=["GET"])
-    def legacy_command_ui():
+    def legacy_ui():
         return render_template("legacy_ui.html")
 
     @app.route("/legacy/commands", methods=["GET"])

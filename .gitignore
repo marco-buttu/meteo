@@ -6,6 +6,6 @@ __pycache__/
 runtime_data/
 *.swp
 .vagrant
-*.log
-*TODO*
-*todo*
+.deployment/
+TODO*
+todo*

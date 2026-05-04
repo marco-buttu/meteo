@@ -1,5 +1,19 @@
 # frozen_string_literal: true
 
+SAVED_ENV_FILE = File.join(__dir__, '.deployment', 'vagrant.env')
+
+if File.file?(SAVED_ENV_FILE)
+  File.readlines(SAVED_ENV_FILE, chomp: true).each do |line|
+    stripped = line.strip
+    next if stripped.empty? || stripped.start_with?('#')
+
+    key, value = stripped.split('=', 2)
+    next if key.nil? || key.empty? || value.nil?
+
+    ENV[key] ||= value
+  end
+end
+
 VAGRANT_BOX = ENV.fetch('VAGRANT_BOX', 'ubuntu/jammy64')
 HOST_DATA_DIR = ENV['HOST_DATA_DIR']
 GUEST_DATA_DIR = ENV.fetch('GUEST_DATA_DIR', '/dati')
@@ -12,7 +26,7 @@ REQUIRES_DATA_DIR = (ARGV & COMMANDS_REQUIRING_DATA_DIR).any?
 HAS_DATA_DIR = !HOST_DATA_DIR.nil? && !HOST_DATA_DIR.strip.empty?
 
 if REQUIRES_DATA_DIR && !HAS_DATA_DIR
-  raise 'HOST_DATA_DIR is required for this command. Example: HOST_DATA_DIR=/home/marco/wrf/data vagrant up'
+  raise 'HOST_DATA_DIR is required for this command. Run ./deploy.sh virtualbox first, or use HOST_DATA_DIR=/path/to/data vagrant up.'
 end
 
 if HAS_DATA_DIR && !File.directory?(HOST_DATA_DIR)

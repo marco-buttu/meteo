@@ -8,6 +8,7 @@ HOST_APP_PORT="${HOST_APP_PORT:-5000}"
 RUN_SMOKE_TESTS="${RUN_SMOKE_TESTS:-1}"
 HOST_SMOKE_VENV="${HOST_SMOKE_VENV:-${PROJECT_ROOT}/.deployment/host-smoke-venv}"
 SMOKE_TEST_PYTHON="${SMOKE_TEST_PYTHON:-}"
+VAGRANT_ENV_FILE="${PROJECT_ROOT}/.deployment/vagrant.env"
 
 usage() {
   cat <<'USAGE'
@@ -35,6 +36,9 @@ Examples:
   HOST_DATA_DIR=/home/marco/wrf/data ./deploy.sh virtualbox
   HOST_DATA_DIR=/home/marco/wrf/data HOST_APP_PORT=5001 ./deploy.sh virtualbox
   HOST_DATA_DIR=/home/marco/wrf/data RUN_SMOKE_TESTS=0 ./deploy.sh virtualbox
+
+The selected host data directory is saved in .deployment/vagrant.env so that
+later commands such as `vagrant up` can reuse it automatically.
 USAGE
 }
 
@@ -63,6 +67,13 @@ ok() {
 
 require_command() {
   command -v "$1" >/dev/null 2>&1 || fail "$1 was not found. Install it before running the VirtualBox deployment."
+}
+
+load_saved_vagrant_env() {
+  if [[ -f "${VAGRANT_ENV_FILE}" ]]; then
+    # shellcheck disable=SC1090
+    source "${VAGRANT_ENV_FILE}"
+  fi
 }
 
 abs_path() {
@@ -119,6 +130,17 @@ select_smoke_test_python() {
   printf '%s\n' "${HOST_SMOKE_VENV}/bin/python"
 }
 
+
+save_vagrant_env() {
+  mkdir -p "${PROJECT_ROOT}/.deployment"
+  cat > "${VAGRANT_ENV_FILE}" <<EOF
+HOST_DATA_DIR=${HOST_DATA_DIR}
+GUEST_DATA_DIR=${GUEST_DATA_DIR}
+HOST_APP_PORT=${HOST_APP_PORT}
+EOF
+  ok "Saved Vagrant host configuration: ${VAGRANT_ENV_FILE}"
+}
+
 run_host_smoke_tests() {
   local python_bin
   local base_url
@@ -137,6 +159,10 @@ require_command vagrant
 require_command VBoxManage
 
 if [[ -z "${HOST_DATA_DIR}" ]]; then
+  load_saved_vagrant_env
+fi
+
+if [[ -z "${HOST_DATA_DIR}" ]]; then
   if [[ -t 0 ]]; then
     read -r -p "Host data directory to mount in the VM: " HOST_DATA_DIR
   else
@@ -151,6 +177,8 @@ HOST_DATA_DIR="$(abs_path "${HOST_DATA_DIR}")"
 export HOST_DATA_DIR
 export GUEST_DATA_DIR
 export HOST_APP_PORT
+
+save_vagrant_env
 
 cd "${PROJECT_ROOT}"
 ok "Project root: ${PROJECT_ROOT}"
