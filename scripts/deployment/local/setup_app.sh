@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 ENV_FILE="${ENV_FILE:-${PROJECT_ROOT}/.env}"
 USE_VENV=1
 SKIP_INSTALL=0
@@ -10,7 +10,7 @@ SKIP_EXTERNAL_PATHS=0
 
 usage() {
   cat <<'USAGE'
-Usage: scripts/setup_app.sh [options]
+Usage: scripts/deployment/local/setup_app.sh [options]
 
 Prepare the application after system dependencies are already available.
 
@@ -109,7 +109,7 @@ if [[ "$SKIP_ENV_CHECK" -eq 0 ]]; then
   if [[ "$SKIP_EXTERNAL_PATHS" -eq 1 ]]; then
     CHECK_ARGS+=(--skip-external-paths)
   fi
-  ENV_FILE="$ENV_FILE" bash "${PROJECT_ROOT}/scripts/check_env.sh" "${CHECK_ARGS[@]}"
+  ENV_FILE="$ENV_FILE" bash "${PROJECT_ROOT}/scripts/deployment/common/check_env.sh" "${CHECK_ARGS[@]}"
 else
   ok "Environment validation skipped"
 fi

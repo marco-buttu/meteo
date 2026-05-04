@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Meteo Legacy Command UI</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f6f7f9;
+      color: #17202a;
+    }
+
+    body {
+      margin: 0;
+      padding: 32px;
+    }
+
+    main {
+      max-width: 980px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin-bottom: 8px;
+      font-size: 2rem;
+    }
+
+    .subtitle {
+      margin-top: 0;
+      color: #566573;
+    }
+
+    .panel {
+      background: #ffffff;
+      border: 1px solid #d7dbdd;
+      border-radius: 12px;
+      padding: 24px;
+      margin: 20px 0;
+      box-shadow: 0 8px 24px rgba(23, 32, 42, 0.06);
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 650;
+    }
+
+    select,
+    input,
+    button {
+      font: inherit;
+    }
+
+    select,
+    input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 10px 12px;
+      border: 1px solid #bfc9ca;
+      border-radius: 8px;
+      background: #ffffff;
+    }
+
+    button {
+      padding: 10px 16px;
+      border: 0;
+      border-radius: 8px;
+      background: #1f618d;
+      color: #ffffff;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+
+    .field {
+      margin: 16px 0;
+    }
+
+    .help {
+      margin-top: 6px;
+      color: #566573;
+      font-size: 0.92rem;
+    }
+
+    .description {
+      color: #34495e;
+      margin-top: 10px;
+    }
+
+    .command-preview,
+    pre {
+      background: #17202a;
+      color: #f8f9f9;
+      border-radius: 8px;
+      padding: 14px;
+      overflow-x: auto;
+    }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: minmax(120px, 180px) 1fr;
+      gap: 8px 16px;
+    }
+
+    .status-grid dt {
+      font-weight: 700;
+    }
+
+    .status-grid dd {
+      margin: 0;
+    }
+
+    .error {
+      color: #922b21;
+      font-weight: 700;
+    }
+
+    .ok {
+      color: #145a32;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Meteo Legacy Command UI</h1>
+  <p class="subtitle">Choose a legacy command, fill in the required parameters, submit the job, and inspect status and result.</p>
+
+  <section class="panel">
+    <div class="field">
+      <label for="command-select">Command</label>
+      <select id="command-select"></select>
+      <p id="command-description" class="description"></p>
+    </div>
+
+    <form id="command-form">
+      <div id="parameter-fields"></div>
+      <div class="field">
+        <label>Generated legacy command</label>
+        <div id="command-preview" class="command-preview"></div>
+      </div>
+      <button id="run-button" type="submit">Run command</button>
+    </form>
+  </section>
+
+  <section class="panel">
+    <h2>Job status</h2>
+    <dl class="status-grid">
+      <dt>Job ID</dt>
+      <dd id="job-id">-</dd>
+      <dt>Status</dt>
+      <dd id="job-status">-</dd>
+    </dl>
+  </section>
+
+  <section class="panel">
+    <h2>Result or error</h2>
+    <pre id="job-output">No job submitted yet.</pre>
+  </section>
+</main>
+
+<script>
+  const commandSelect = document.getElementById("command-select");
+  const commandDescription = document.getElementById("command-description");
+  const commandForm = document.getElementById("command-form");
+  const parameterFields = document.getElementById("parameter-fields");
+  const commandPreview = document.getElementById("command-preview");
+  const runButton = document.getElementById("run-button");
+  const jobIdNode = document.getElementById("job-id");
+  const jobStatusNode = document.getElementById("job-status");
+  const jobOutput = document.getElementById("job-output");
+
+  let commands = [];
+  let activeCommand = null;
+  let pollTimer = null;
+
+  function showOutput(value) {
+    if (typeof value === "string") {
+      jobOutput.textContent = value;
+      return;
+    }
+    jobOutput.textContent = JSON.stringify(value, null, 2);
+  }
+
+  function getFieldValue(parameter) {
+    const field = document.getElementById(`param-${parameter.name}`);
+    return field ? field.value.trim() : "";
+  }
+
+  function buildLegacyCommand() {
+    if (!activeCommand) {
+      return "";
+    }
+    const values = activeCommand.parameters.map((parameter) => getFieldValue(parameter));
+    return [activeCommand.name, ...values].join(",");
+  }
+
+  function updatePreview() {
+    commandPreview.textContent = buildLegacyCommand();
+  }
+
+  function renderCommand(command) {
+    activeCommand = command;
+    commandDescription.textContent = command.description || "";
+    parameterFields.innerHTML = "";
+
+    command.parameters.forEach((parameter) => {
+      const wrapper = document.createElement("div");
+      wrapper.className = "field";
+
+      const label = document.createElement("label");
+      label.htmlFor = `param-${parameter.name}`;
+      label.textContent = parameter.label;
+      wrapper.appendChild(label);
+
+      const input = document.createElement("input");
+      input.id = `param-${parameter.name}`;
+      input.name = parameter.name;
+      input.type = parameter.type === "integer" ? "number" : parameter.type;
+      input.required = Boolean(parameter.required);
+      if (parameter.placeholder) {
+        input.placeholder = parameter.placeholder;
+        input.value = parameter.example || parameter.placeholder;
+      }
+      if (parameter.pattern) {
+        input.pattern = parameter.pattern;
+      }
+      if (parameter.min !== undefined) {
+        input.min = parameter.min;
+      }
+      if (parameter.step !== undefined) {
+        input.step = parameter.step;
+      }
+      input.addEventListener("input", updatePreview);
+      wrapper.appendChild(input);
+
+      const help = document.createElement("p");
+      help.className = "help";
+      help.textContent = parameter.help;
+      wrapper.appendChild(help);
+
+      parameterFields.appendChild(wrapper);
+    });
+
+    updatePreview();
+  }
+
+  async function loadCommands() {
+    const response = await fetch("/legacy/commands");
+    if (!response.ok) {
+      throw new Error(`Unable to load command catalog: HTTP ${response.status}`);
+    }
+    const payload = await response.json();
+    commands = payload.commands || [];
+
+    commandSelect.innerHTML = "";
+    commands.forEach((command) => {
+      const option = document.createElement("option");
+      option.value = command.name;
+      option.textContent = command.label || command.name;
+      commandSelect.appendChild(option);
+    });
+
+    commandSelect.addEventListener("change", () => {
+      const selected = commands.find((command) => command.name === commandSelect.value);
+      renderCommand(selected);
+    });
+
+    if (commands.length > 0) {
+      renderCommand(commands[0]);
+    }
+  }
+
+  async function submitCommand(event) {
+    event.preventDefault();
+
+    if (!commandForm.reportValidity()) {
+      return;
+    }
+
+    const command = buildLegacyCommand();
+    runButton.disabled = true;
+    jobIdNode.textContent = "-";
+    jobStatusNode.textContent = "submitting";
+    jobStatusNode.className = "";
+    showOutput({ command });
+
+    try {
+      const response = await fetch("/legacy/command", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ command }),
+      });
+      const payload = await response.json();
+
+      if (!response.ok) {
+        jobStatusNode.textContent = "request failed";
+        jobStatusNode.className = "error";
+        showOutput(payload);
+        return;
+      }
+
+      jobIdNode.textContent = payload.job_id;
+      jobStatusNode.textContent = payload.status;
+      showOutput(payload);
+      pollJob(payload.job_id);
+    } catch (error) {
+      jobStatusNode.textContent = "request failed";
+      jobStatusNode.className = "error";
+      showOutput(String(error));
+    } finally {
+      runButton.disabled = false;
+    }
+  }
+
+  function pollJob(jobId) {
+    if (pollTimer) {
+      clearInterval(pollTimer);
+    }
+
+    pollTimer = setInterval(async () => {
+      try {
+        const response = await fetch(`/jobs/${jobId}`);
+        const metadata = await response.json();
+        jobStatusNode.textContent = metadata.status || "unknown";
+        jobStatusNode.className = metadata.status === "finished" ? "ok" : metadata.status === "failed" ? "error" : "";
+
+        if (metadata.status === "finished") {
+          clearInterval(pollTimer);
+          const resultResponse = await fetch(`/jobs/${jobId}/result`);
+          const result = await resultResponse.json();
+          showOutput(result);
+        } else if (metadata.status === "failed") {
+          clearInterval(pollTimer);
+          showOutput(metadata);
+        } else {
+          showOutput(metadata);
+        }
+      } catch (error) {
+        clearInterval(pollTimer);
+        jobStatusNode.textContent = "polling failed";
+        jobStatusNode.className = "error";
+        showOutput(String(error));
+      }
+    }, 1000);
+  }
+
+  commandForm.addEventListener("submit", submitCommand);
+  loadCommands().catch((error) => {
+    jobStatusNode.textContent = "initialization failed";
+    jobStatusNode.className = "error";
+    showOutput(String(error));
+  });
+</script>
+</body>
+</html>
