@@ -7,5 +7,5 @@ runtime_data/
 *.swp
 .vagrant
 .deployment/
-TODO*
-todo*
+/TODO*
+/todo*

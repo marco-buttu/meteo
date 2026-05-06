@@ -93,17 +93,11 @@ cd "${PROJECT_ROOT}"
 ok "Ensuring the VM is running without provisioning"
 vagrant up --no-provision
 
-ok "Removing the existing application installation inside the VM"
-vagrant ssh -c 'set -euo pipefail
-sudo systemctl stop meteo-app meteo-worker 2>/dev/null || true
-sudo systemctl disable meteo-app meteo-worker 2>/dev/null || true
-sudo rm -f /etc/systemd/system/meteo-app.service /etc/systemd/system/meteo-worker.service
-sudo systemctl daemon-reload
-sudo rm -rf /opt/meteo
-'
+ok "Copying and configuring the current project inside the VM"
+vagrant ssh -c "sudo env GUEST_DATA_DIR='${GUEST_DATA_DIR:-/dati}' METEO_RUN_USER='vagrant' METEO_RUN_GROUP='vagrant' bash /vagrant/scripts/deployment/virtualbox/prepare_app_in_guest.sh"
 
-ok "Reprovisioning the application inside the existing VM"
-vagrant provision
+ok "Reinstalling the application inside the VM with the native Linux reinstall script"
+vagrant ssh -c "sudo bash /opt/meteo/scripts/deployment/local/reinstall_app.sh --yes --user vagrant --group vagrant"
 
 ok "Application reinstall inside the existing VM completed"
 ok "API should be reachable from the host at: http://127.0.0.1:${HOST_APP_PORT}"

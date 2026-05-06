@@ -287,11 +287,28 @@ To preview the generated services:
 sudo scripts/deployment/local/install_systemd_services.sh --dry-run
 ```
 
+To reinstall only the application on the current machine while keeping system
+packages and Redis data:
+
+```bash
+sudo scripts/deployment/local/reinstall_app.sh --yes
+```
+
+This common reinstall script is also used inside the VirtualBox VM. It stops and
+removes the Meteo systemd units, removes `.venv`, runs `setup_app.sh` again,
+reinstalls the systemd units, and restarts them by default. Runtime data is kept
+unless you explicitly pass `--remove-runtime-data`.
+
 To uninstall a local test deployment:
 
 ```bash
 sudo scripts/deployment/local/uninstall_native_linux.sh --yes --remove-runtime-data --remove-system-deps
 ```
+
+`uninstall_native_linux.sh` and `reinstall_app.sh` are intentionally different:
+`uninstall_native_linux.sh` removes a deployment, while `reinstall_app.sh`
+refreshes the application while keeping the machine and system packages in
+place.
 
 Read the full native deployment guide here:
 
@@ -389,6 +406,7 @@ The Vagrant deployment:
 - creates or starts a VirtualBox VM from the configured Ubuntu box
 - forwards host port `HOST_APP_PORT` to guest port `5000`
 - mounts `HOST_DATA_DIR` into the guest as `GUEST_DATA_DIR`, default `/dati`
+- prepares the VM-specific context with `prepare_app_in_guest.sh`
 - copies the current project checkout from `/vagrant` to `/opt/meteo`
 - rewrites the VM `.env` for the guest environment
 - runs the same native deployment scripts used by local deployment
@@ -397,6 +415,8 @@ The Vagrant deployment:
 
 The project is copied to `/opt/meteo` instead of being run directly from the
 shared `/vagrant` folder. This better resembles deployment on a real Linux host.
+The VM provisioning code is a wrapper: once the VM-specific context is ready, it
+uses the same native Linux scripts used by local deployment.
 
 ### Saved Vagrant host configuration
 
@@ -433,6 +453,25 @@ HOST_DATA_DIR=/another/data/path vagrant up
 
 The `.deployment/` directory is local host state and is ignored by Git.
 
+### Shared local deployment logic
+
+The VM deployment intentionally reuses the native Linux deployment scripts. The
+VirtualBox-specific scripts prepare mounts, copy the application to `/opt/meteo`,
+and configure the VM `.env`; they do not duplicate the application installation
+logic.
+
+The shared native scripts are:
+
+```text
+scripts/deployment/local/install_system_deps_debian.sh
+scripts/deployment/local/setup_app.sh
+scripts/deployment/local/install_systemd_services.sh
+scripts/deployment/local/reinstall_app.sh
+```
+
+This makes the VM a realistic test environment for the local/native deployment
+flow.
+
 ### Reinstall the app inside the existing VM
 
 Use this when the VM is fine and you only want to reinstall the application from
@@ -457,15 +496,22 @@ Direct mode:
 ./deploy.sh vm-reinstall
 ```
 
-This target runs:
+This target runs the host-side wrapper:
 
 ```bash
 scripts/deployment/virtualbox/reinstall_app.sh
 ```
 
-It stops and removes the existing `meteo-app` and `meteo-worker` units inside the
-VM, removes `/opt/meteo`, copies the current project again, reprovisions the app,
-reinstalls the services, and restarts them.
+The wrapper starts the VM if needed, prepares `/opt/meteo` from the current
+project checkout, configures the VM `.env`, and then calls the common native
+Linux reinstall script inside the VM:
+
+```bash
+/opt/meteo/scripts/deployment/local/reinstall_app.sh
+```
+
+This keeps the VM, Ubuntu, Redis and system packages in place while reinstalling
+only the application and its systemd units.
 
 Smoke tests are run from the host at the end unless disabled:
 
