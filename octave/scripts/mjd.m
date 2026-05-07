@@ -1,3 +1,4 @@
+# Author: Franco Buffa
 function j = mjd(year, month, day, hour, minute, second)
    
  a = floor((14 - month)/12);

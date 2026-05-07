@@ -1,3 +1,4 @@
+# Author: Franco Buffa
 function [rain,pname1]=rainplot(mdata,plot_flag)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

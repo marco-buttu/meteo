@@ -1,3 +1,4 @@
+# Author: Franco Buffa
 close all;
 clear all;
 param;

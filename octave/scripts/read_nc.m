@@ -1,3 +1,4 @@
+# Author: Franco Buffa
 function [data,simdate]=read_nc(fn1,fn2,nl,nh,cutpath)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % fn1='MoSarT_T.nc';

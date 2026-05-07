@@ -1,3 +1,4 @@
+# Author: Franco Buffa
 function dataplot(date,mdata_path,issue,arch_path,www_path)
 
  fname=[mdata_path,date,issue,'.dat'];

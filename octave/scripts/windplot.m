@@ -1,3 +1,4 @@
+# Author: Franco Buffa
 function [ang,mod0,pname1,pname2]=windplot(mdata)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
