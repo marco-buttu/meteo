@@ -1,3 +1,4 @@
+# Author: Franco Buffa
 function [tau,pname1]=tauplot(mdata,fre,plot_flag)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

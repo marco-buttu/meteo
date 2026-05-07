@@ -1,3 +1,4 @@
+# Author: Franco Buffa
 function Ka=Ka_freq2(freq,ro_v,P,Tatm,w);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Returns the atmospheric absorption coefficient [Neper/Km]

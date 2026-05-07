@@ -1,3 +1,4 @@
+# Author: Franco Buffa
 function [T]=CalTemp(P,Theta)
 
 %CalTemp Calculate the temperature T(K) at pressure P (Pa) and potentialtemperature Theta (K) 

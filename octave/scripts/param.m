@@ -1,3 +1,4 @@
+# Author: Franco Buffa
 path0='/media/marco/shared/Work/inaf/doc/server_meteo/franco/wrf/scripts/';
 mfile_a='/media/marco/shared/Work/inaf/doc/server_meteo/franco/wrf/data/mdata/';
 mfile_b='/media/marco/shared/Work/inaf/doc/server_meteo/franco/wrf/data/oldmdata/';

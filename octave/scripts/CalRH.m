@@ -1,3 +1,4 @@
+# Author: Franco Buffa
 function [rh]=CalRH(t,qv,pres,opt)
 % CALRH calculate relative humidity (%) as a function of temperature (K), Water
 % vapor mixing ratio (kg kg-1), and pressure (Pa)

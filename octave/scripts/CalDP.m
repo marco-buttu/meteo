@@ -1,3 +1,4 @@
+# Author: Franco Buffa
 function [dewPointC]=CalDP(tempC,humidity)
   % Calculate dew point
   % Specify the constants for water vapor (b) and barometric (c) pressure.

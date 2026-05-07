@@ -1,3 +1,4 @@
+# Author: Franco Buffa
 %%%%%%%%%%%%#! /bin/octave -qf
 clear all;
 param;
