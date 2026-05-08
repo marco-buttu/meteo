@@ -9,6 +9,10 @@ RUN_SMOKE_TESTS="${RUN_SMOKE_TESTS:-1}"
 HOST_SMOKE_VENV="${HOST_SMOKE_VENV:-${PROJECT_ROOT}/.deployment/host-smoke-venv}"
 SMOKE_TEST_PYTHON="${SMOKE_TEST_PYTHON:-}"
 VAGRANT_ENV_FILE="${PROJECT_ROOT}/.deployment/vagrant.env"
+SMOKE_PYTHON_HELPER="${PROJECT_ROOT}/scripts/deployment/host/smoke_test_python.sh"
+
+# shellcheck disable=SC1090
+source "${SMOKE_PYTHON_HELPER}"
 
 usage() {
   cat <<'USAGE'
@@ -20,7 +24,8 @@ Options:
   -h, --help  Show this help message.
 
 Environment variables:
-  HOST_DATA_DIR      Required unless provided interactively. Data directory on host.
+  HOST_DATA_DIR      Required unless provided interactively or saved in
+                     .deployment/vagrant.env. Data directory on host.
   GUEST_DATA_DIR     Directory where host data are mounted in the VM. Default: /dati
   HOST_APP_PORT      Host port forwarded to guest port 5000. Default: 5000
   VAGRANT_BOX        Ubuntu Vagrant box. Default: ubuntu/jammy64
@@ -29,7 +34,8 @@ Environment variables:
   RUN_SMOKE_TESTS    Run host-side smoke tests after deployment. Default: 1
                      Set to 0 to skip.
   SMOKE_TEST_PYTHON  Optional Python interpreter for smoke tests.
-  HOST_SMOKE_VENV    Host virtualenv created when requests is not available.
+  HOST_SMOKE_VENV    Host virtualenv created when the system Python cannot
+                     import requests and the user agrees to create it.
                      Default: .deployment/host-smoke-venv
 
 Examples:
@@ -65,6 +71,14 @@ ok() {
   echo "[OK] $*"
 }
 
+warn() {
+  if [[ -t 2 ]] && [[ -z "${NO_COLOR:-}" ]]; then
+    printf '\033[33m[WARNING] %s\033[0m\n' "$*" >&2
+  else
+    printf '[WARNING] %s\n' "$*" >&2
+  fi
+}
+
 require_command() {
   command -v "$1" >/dev/null 2>&1 || fail "$1 was not found. Install it before running the VirtualBox deployment."
 }
@@ -95,66 +109,34 @@ is_false() {
   esac
 }
 
-python_can_import_requests() {
-  local python_bin="$1"
-  "${python_bin}" - <<'PY' >/dev/null 2>&1
-import requests
-PY
-}
-
-select_smoke_test_python() {
-  if [[ -n "${SMOKE_TEST_PYTHON}" ]]; then
-    [[ -x "${SMOKE_TEST_PYTHON}" ]] || fail "SMOKE_TEST_PYTHON is not executable: ${SMOKE_TEST_PYTHON}"
-    python_can_import_requests "${SMOKE_TEST_PYTHON}" || fail "SMOKE_TEST_PYTHON cannot import requests: ${SMOKE_TEST_PYTHON}"
-    printf '%s\n' "${SMOKE_TEST_PYTHON}"
-    return 0
-  fi
-
-  if [[ -x "${PROJECT_ROOT}/.venv/bin/python" ]] && python_can_import_requests "${PROJECT_ROOT}/.venv/bin/python"; then
-    printf '%s\n' "${PROJECT_ROOT}/.venv/bin/python"
-    return 0
-  fi
-
-  require_command python3
-  if python_can_import_requests python3; then
-    command -v python3
-    return 0
-  fi
-
-  ok "Creating host virtual environment for smoke tests: ${HOST_SMOKE_VENV}"
-  python3 -m venv "${HOST_SMOKE_VENV}" || fail "Failed to create host smoke test virtual environment. Is python3-venv installed?"
-  "${HOST_SMOKE_VENV}/bin/python" -m pip install --upgrade pip
-  "${HOST_SMOKE_VENV}/bin/python" -m pip install -r "${PROJECT_ROOT}/requirements.txt"
-
-  python_can_import_requests "${HOST_SMOKE_VENV}/bin/python" || fail "Smoke test virtual environment cannot import requests."
-  printf '%s\n' "${HOST_SMOKE_VENV}/bin/python"
-}
-
-
 save_vagrant_env() {
   mkdir -p "${PROJECT_ROOT}/.deployment"
-  cat > "${VAGRANT_ENV_FILE}" <<EOF
+  cat > "${VAGRANT_ENV_FILE}" <<EOF_ENV
 HOST_DATA_DIR=${HOST_DATA_DIR}
 GUEST_DATA_DIR=${GUEST_DATA_DIR}
 HOST_APP_PORT=${HOST_APP_PORT}
-EOF
+EOF_ENV
   ok "Saved Vagrant host configuration: ${VAGRANT_ENV_FILE}"
 }
 
 run_host_smoke_tests() {
-  local python_bin
-  local base_url
+  local python_bin=""
+  local base_url="http://127.0.0.1:${HOST_APP_PORT}"
 
   [[ -f "${PROJECT_ROOT}/scripts/smoke_tests.py" ]] || fail "Smoke test script not found: ${PROJECT_ROOT}/scripts/smoke_tests.py"
 
-  python_bin="$(select_smoke_test_python)"
-  base_url="http://127.0.0.1:${HOST_APP_PORT}"
+  if ! python_bin="$(select_or_prepare_smoke_test_python "${PROJECT_ROOT}")"; then
+    warn "Host-side smoke tests skipped."
+    return 0
+  fi
 
-  ok "Running host-side smoke tests against ${base_url}"
+  ok "Running host-side smoke tests with: ${python_bin}"
+  ok "Smoke test base URL: ${base_url}"
   BASE_URL="${base_url}" "${python_bin}" "${PROJECT_ROOT}/scripts/smoke_tests.py"
   ok "Host-side smoke tests completed"
 }
 
+[[ -f "${SMOKE_PYTHON_HELPER}" ]] || fail "Smoke-test Python helper not found: ${SMOKE_PYTHON_HELPER}"
 require_command vagrant
 require_command VBoxManage
 

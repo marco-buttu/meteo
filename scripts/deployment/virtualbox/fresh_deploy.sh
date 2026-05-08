@@ -3,6 +3,7 @@ set -euo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 ASSUME_YES="${ASSUME_YES:-0}"
+HOST_DEP_CHECK="${PROJECT_ROOT}/scripts/deployment/host/check_dependencies.sh"
 
 usage() {
   cat <<'USAGE'
@@ -16,9 +17,14 @@ Options:
   -h, --help  Show this help message.
 
 Environment variables:
-  HOST_DATA_DIR      Optional. If unset, deploy_virtualbox.sh asks for it.
+  HOST_DATA_DIR      Optional. If unset, deploy_virtualbox.sh asks for it or
+                     reads it from .deployment/vagrant.env.
   RUN_SMOKE_TESTS    Run host-side smoke tests after deployment. Default: 1
                      Set to 0 to skip.
+  INSTALL_HOST_DEPS  Host dependency installation mode:
+                       unset  ask interactively if something is missing
+                       1      install missing host packages automatically
+                       0      never install, fail if something is missing
 USAGE
 }
 
@@ -65,12 +71,10 @@ WARNING
   esac
 }
 
-require_command() {
-  command -v "$1" >/dev/null 2>&1 || fail "$1 was not found."
-}
-
 [[ -f "${PROJECT_ROOT}/Vagrantfile" ]] || fail "Vagrantfile not found in project root: ${PROJECT_ROOT}"
-require_command vagrant
+[[ -x "${HOST_DEP_CHECK}" ]] || fail "Host dependency check script not found or not executable: ${HOST_DEP_CHECK}"
+
+bash "${HOST_DEP_CHECK}" --virtualbox --no-smoke-tests
 confirm
 
 cd "${PROJECT_ROOT}"
