@@ -2,6 +2,7 @@
 set -euo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+HOST_DEP_CHECK="${PROJECT_ROOT}/scripts/deployment/host/check_dependencies.sh"
 
 usage() {
   cat <<'USAGE'
@@ -51,6 +52,8 @@ require_vagrant_project() {
 
 run_vagrant() {
   require_vagrant_project
+  [[ -x "${HOST_DEP_CHECK}" ]] || fail "Host dependency check script not found or not executable: ${HOST_DEP_CHECK}"
+  bash "${HOST_DEP_CHECK}" --virtualbox --no-smoke-tests
   cd "${PROJECT_ROOT}"
   vagrant "$@"
 }
