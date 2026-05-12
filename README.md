@@ -555,25 +555,9 @@ BASE_URL=http://127.0.0.1:5000 python scripts/smoke_tests.py
 The deployment script chooses a Python interpreter in this order:
 
 1. `SMOKE_TEST_PYTHON`, if explicitly provided.
-2. the currently active virtual environment, if `VIRTUAL_ENV` is set.
-3. `python3` from `PATH`.
-
-The selected Python interpreter must be able to import `requests`. If `requests`
-is missing, the script asks whether it should install `requests` in the same
-Python environment. The default answer is `Yes`, so pressing Enter installs it.
-
-If the selected interpreter is the system Python and `requests` is missing, the
-script asks whether it should create a dedicated host smoke-test virtual
-environment at:
-
-```text
-.deployment/host-smoke-venv
-```
-
-and install `requests` there.
-
-If the user declines the installation or virtualenv creation, the deployment
-continues and the host-side smoke tests are skipped with a warning.
+2. `.venv/bin/python`, if it exists and can import `requests`.
+3. `python3`, if it can import `requests`.
+4. A dedicated host virtual environment created at `.deployment/host-smoke-venv`.
 
 This verifies not only the services inside the VM, but also that the host can
 reach the application through port forwarding.
@@ -2070,3 +2054,60 @@ That means:
 - keep the modern architecture
 - migrate legacy computations away from Octave
 - eventually remove transitional legacy adapters once they are no longer needed
+
+## Native data catalog API and UI file selection
+
+The web UI does not require users to type the legacy data timestamp manually.
+It loads available data files from the native Python endpoint:
+
+```http
+GET /api/data
+```
+
+The endpoint reads `DATA_DIR/mdata` and returns only files matching the legacy
+format:
+
+```text
+YYYYMMDDHH.dat
+```
+
+For each file, the response includes the filename, timestamp without `.dat`,
+year, month, day and hour.
+
+Examples:
+
+```bash
+curl http://127.0.0.1:5000/api/data
+curl 'http://127.0.0.1:5000/api/data?year=2026'
+curl 'http://127.0.0.1:5000/api/data?year=2026&month=01'
+curl 'http://127.0.0.1:5000/api/data?year=2026&month=01&day=16'
+curl 'http://127.0.0.1:5000/api/data?from=2026010100&to=2026013123'
+curl 'http://127.0.0.1:5000/api/data?limit=100'
+```
+
+If no filter is provided, the endpoint returns the latest available month based
+on the newest timestamp found in `DATA_DIR/mdata`.
+
+In the UI:
+
+```text
+http://127.0.0.1:5000/ui
+```
+
+users can filter available data by year, month and day. The default filter
+values are the current local day. After selecting a file, the UI derives the
+legacy timestamp from the filename automatically. For example:
+
+```text
+2026011600.dat -> 2026011600
+```
+
+The generated legacy command uses that timestamp internally, without exposing a
+manual timestamp input field in the normal UI.
+
+The smoke test suite includes checks for both:
+
+```text
+GET /api/data
+GET /ui
+```
