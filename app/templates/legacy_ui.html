@@ -104,13 +104,28 @@
       margin-top: 10px;
     }
 
-    .command-preview,
     pre {
       background: #17202a;
       color: #f8f9f9;
       border-radius: 8px;
       padding: 14px;
       overflow-x: auto;
+    }
+
+    details {
+      border: 1px solid #d7dbdd;
+      border-radius: 8px;
+      padding: 14px;
+      background: #fbfcfc;
+    }
+
+    summary {
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    details pre {
+      margin-bottom: 0;
     }
 
     .status-grid {
@@ -192,10 +207,6 @@
 
     <form id="command-form">
       <div id="parameter-fields"></div>
-      <div class="field">
-        <label>Generated legacy command</label>
-        <div id="command-preview" class="command-preview"></div>
-      </div>
       <button id="run-button" type="submit">Run command</button>
     </form>
   </section>
@@ -211,6 +222,14 @@
   </section>
 
   <section class="panel">
+    <h2>Technical details</h2>
+    <details id="request-details">
+      <summary>Request payload</summary>
+      <pre id="request-output">No request submitted yet.</pre>
+    </details>
+  </section>
+
+  <section class="panel">
     <h2>Result or error</h2>
     <pre id="job-output">No job submitted yet.</pre>
   </section>
@@ -221,11 +240,12 @@
   const commandDescription = document.getElementById("command-description");
   const commandForm = document.getElementById("command-form");
   const parameterFields = document.getElementById("parameter-fields");
-  const commandPreview = document.getElementById("command-preview");
   const runButton = document.getElementById("run-button");
   const jobIdNode = document.getElementById("job-id");
   const jobStatusNode = document.getElementById("job-status");
   const jobOutput = document.getElementById("job-output");
+  const requestOutput = document.getElementById("request-output");
+  const requestDetails = document.getElementById("request-details");
   const dataYear = document.getElementById("data-year");
   const dataMonth = document.getElementById("data-month");
   const dataDay = document.getElementById("data-day");
@@ -244,6 +264,10 @@
       return;
     }
     jobOutput.textContent = JSON.stringify(value, null, 2);
+  }
+
+  function showRequest(value) {
+    requestOutput.textContent = JSON.stringify(value, null, 2);
   }
 
   function visibleParameters() {
@@ -266,8 +290,7 @@
     return [activeCommand.name, ...values].join(",");
   }
 
-  function updatePreview() {
-    commandPreview.textContent = selectedDataTimestamp ? buildLegacyCommand() : "Select a data file first.";
+  function updateRunButtonState() {
     runButton.disabled = !selectedDataTimestamp;
   }
 
@@ -299,7 +322,7 @@
     dataHelp.className = "help";
     selectedDataTimestamp = "";
     dataFileSelect.innerHTML = "";
-    updatePreview();
+    updateRunButtonState();
 
     try {
       const response = await fetch(`/api/data${dataQueryString()}`);
@@ -340,7 +363,7 @@
       dataHelp.className = "help error";
     } finally {
       loadDataButton.disabled = false;
-      updatePreview();
+      updateRunButtonState();
     }
   }
 
@@ -376,7 +399,7 @@
       if (parameter.step !== undefined) {
         input.step = parameter.step;
       }
-      input.addEventListener("input", updatePreview);
+      input.addEventListener("input", updateRunButtonState);
       wrapper.appendChild(input);
 
       const help = document.createElement("p");
@@ -387,7 +410,7 @@
       parameterFields.appendChild(wrapper);
     });
 
-    updatePreview();
+    updateRunButtonState();
   }
 
   async function loadCommands() {
@@ -431,17 +454,19 @@
     }
 
     const command = buildLegacyCommand();
+    const requestPayload = { command };
     runButton.disabled = true;
     jobIdNode.textContent = "-";
     jobStatusNode.textContent = "submitting";
     jobStatusNode.className = "";
-    showOutput({ command });
+    showRequest(requestPayload);
+    showOutput("Waiting for response...");
 
     try {
       const response = await fetch("/legacy/command", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ command }),
+        body: JSON.stringify(requestPayload),
       });
       const payload = await response.json();
 
@@ -462,7 +487,7 @@
       showOutput(String(error));
     } finally {
       runButton.disabled = false;
-      updatePreview();
+      updateRunButtonState();
     }
   }
 
@@ -504,7 +529,7 @@
       ? `Selected timestamp: ${selectedDataTimestamp}.`
       : "Select a file. The timestamp is taken from the filename automatically.";
     dataHelp.className = "help";
-    updatePreview();
+    updateRunButtonState();
   });
   loadDataButton.addEventListener("click", loadDataFiles);
   commandForm.addEventListener("submit", submitCommand);
