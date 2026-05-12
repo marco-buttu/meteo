@@ -27,6 +27,10 @@
       font-size: 2rem;
     }
 
+    h2 {
+      margin-top: 0;
+    }
+
     .subtitle {
       margin-top: 0;
       color: #566573;
@@ -82,6 +86,13 @@
       margin: 16px 0;
     }
 
+    .filter-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      align-items: end;
+    }
+
     .help {
       margin-top: 6px;
       color: #566573;
@@ -125,12 +136,52 @@
       color: #145a32;
       font-weight: 700;
     }
+
+    .warning {
+      color: #9a5b00;
+      font-weight: 700;
+    }
+
+    @media (max-width: 760px) {
+      .filter-grid {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
 <body>
 <main>
   <h1>Meteo Legacy Command UI</h1>
-  <p class="subtitle">Choose a legacy command, fill in the required parameters, submit the job, and inspect status and result.</p>
+  <p class="subtitle">Choose a data file and a legacy command, submit the job, and inspect status and result.</p>
+
+  <section class="panel">
+    <h2>Available data</h2>
+    <p class="description">Filter the data directory and choose the file to use for the legacy command.</p>
+
+    <div class="filter-grid">
+      <div class="field">
+        <label for="data-year">Year</label>
+        <input id="data-year" type="number" min="0" step="1">
+      </div>
+      <div class="field">
+        <label for="data-month">Month</label>
+        <input id="data-month" type="number" min="1" max="12" step="1">
+      </div>
+      <div class="field">
+        <label for="data-day">Day</label>
+        <input id="data-day" type="number" min="1" max="31" step="1">
+      </div>
+      <div class="field">
+        <button id="load-data-button" type="button">Load data</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="data-file-select">Data file</label>
+      <select id="data-file-select"></select>
+      <p id="data-help" class="help">Select a file. The timestamp is taken from the filename automatically.</p>
+    </div>
+  </section>
 
   <section class="panel">
     <div class="field">
@@ -175,10 +226,17 @@
   const jobIdNode = document.getElementById("job-id");
   const jobStatusNode = document.getElementById("job-status");
   const jobOutput = document.getElementById("job-output");
+  const dataYear = document.getElementById("data-year");
+  const dataMonth = document.getElementById("data-month");
+  const dataDay = document.getElementById("data-day");
+  const dataFileSelect = document.getElementById("data-file-select");
+  const dataHelp = document.getElementById("data-help");
+  const loadDataButton = document.getElementById("load-data-button");
 
   let commands = [];
   let activeCommand = null;
   let pollTimer = null;
+  let selectedDataTimestamp = "";
 
   function showOutput(value) {
     if (typeof value === "string") {
@@ -186,6 +244,13 @@
       return;
     }
     jobOutput.textContent = JSON.stringify(value, null, 2);
+  }
+
+  function visibleParameters() {
+    if (!activeCommand) {
+      return [];
+    }
+    return activeCommand.parameters.filter((parameter) => parameter.name !== "data_timestamp");
   }
 
   function getFieldValue(parameter) {
@@ -197,12 +262,86 @@
     if (!activeCommand) {
       return "";
     }
-    const values = activeCommand.parameters.map((parameter) => getFieldValue(parameter));
+    const values = [selectedDataTimestamp, ...visibleParameters().map((parameter) => getFieldValue(parameter))];
     return [activeCommand.name, ...values].join(",");
   }
 
   function updatePreview() {
-    commandPreview.textContent = buildLegacyCommand();
+    commandPreview.textContent = selectedDataTimestamp ? buildLegacyCommand() : "Select a data file first.";
+    runButton.disabled = !selectedDataTimestamp;
+  }
+
+  function setTodayFilters() {
+    const today = new Date();
+    dataYear.value = String(today.getFullYear());
+    dataMonth.value = String(today.getMonth() + 1).padStart(2, "0");
+    dataDay.value = String(today.getDate()).padStart(2, "0");
+  }
+
+  function dataQueryString() {
+    const params = new URLSearchParams();
+    if (dataYear.value.trim()) {
+      params.set("year", dataYear.value.trim());
+    }
+    if (dataMonth.value.trim()) {
+      params.set("month", dataMonth.value.trim());
+    }
+    if (dataDay.value.trim()) {
+      params.set("day", dataDay.value.trim());
+    }
+    const query = params.toString();
+    return query ? `?${query}` : "";
+  }
+
+  async function loadDataFiles() {
+    loadDataButton.disabled = true;
+    dataHelp.textContent = "Loading available data files...";
+    dataHelp.className = "help";
+    selectedDataTimestamp = "";
+    dataFileSelect.innerHTML = "";
+    updatePreview();
+
+    try {
+      const response = await fetch(`/api/data${dataQueryString()}`);
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload.message || `Unable to load data files: HTTP ${response.status}`);
+      }
+
+      const files = payload.files || [];
+      if (files.length === 0) {
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = "No data files found for the selected filters";
+        dataFileSelect.appendChild(option);
+        dataHelp.textContent = "No matching data files were found. Change year, month or day and load again.";
+        dataHelp.className = "help warning";
+        return;
+      }
+
+      files.forEach((file) => {
+        const option = document.createElement("option");
+        option.value = file.timestamp;
+        option.textContent = `${file.filename} (${String(file.hour).padStart(2, "0")}:00)`;
+        dataFileSelect.appendChild(option);
+      });
+
+      selectedDataTimestamp = files[0].timestamp;
+      dataFileSelect.value = selectedDataTimestamp;
+      dataHelp.textContent = `${payload.count} data file(s) found. Selected timestamp: ${selectedDataTimestamp}.`;
+      dataHelp.className = "help";
+    } catch (error) {
+      const option = document.createElement("option");
+      option.value = "";
+      option.textContent = "Unable to load data files";
+      dataFileSelect.appendChild(option);
+      dataHelp.textContent = String(error);
+      dataHelp.className = "help error";
+    } finally {
+      loadDataButton.disabled = false;
+      updatePreview();
+    }
   }
 
   function renderCommand(command) {
@@ -210,7 +349,7 @@
     commandDescription.textContent = command.description || "";
     parameterFields.innerHTML = "";
 
-    command.parameters.forEach((parameter) => {
+    visibleParameters().forEach((parameter) => {
       const wrapper = document.createElement("div");
       wrapper.className = "field";
 
@@ -280,6 +419,13 @@
   async function submitCommand(event) {
     event.preventDefault();
 
+    if (!selectedDataTimestamp) {
+      jobStatusNode.textContent = "missing data file";
+      jobStatusNode.className = "error";
+      showOutput("Select a data file before running a command.");
+      return;
+    }
+
     if (!commandForm.reportValidity()) {
       return;
     }
@@ -316,6 +462,7 @@
       showOutput(String(error));
     } finally {
       runButton.disabled = false;
+      updatePreview();
     }
   }
 
@@ -351,8 +498,19 @@
     }, 1000);
   }
 
+  dataFileSelect.addEventListener("change", () => {
+    selectedDataTimestamp = dataFileSelect.value;
+    dataHelp.textContent = selectedDataTimestamp
+      ? `Selected timestamp: ${selectedDataTimestamp}.`
+      : "Select a file. The timestamp is taken from the filename automatically.";
+    dataHelp.className = "help";
+    updatePreview();
+  });
+  loadDataButton.addEventListener("click", loadDataFiles);
   commandForm.addEventListener("submit", submitCommand);
-  loadCommands().catch((error) => {
+
+  setTodayFilters();
+  Promise.all([loadCommands(), loadDataFiles()]).catch((error) => {
     jobStatusNode.textContent = "initialization failed";
     jobStatusNode.className = "error";
     showOutput(String(error));

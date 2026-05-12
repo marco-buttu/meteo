@@ -529,6 +529,50 @@ def test_legacy_tsys_series_success(ctx: TestContext) -> None:
     assert_true(len(result["series"]) > 0, "legacy_tsys series must not be empty")
 
 
+
+def test_api_data_catalog_success(ctx: TestContext) -> None:
+    print_expectation(
+        [
+            "GET /api/data returns 200",
+            "response contains a files list",
+            "configured legacy data file is listed when filtered by date",
+        ]
+    )
+
+    timestamp = ctx.legacy_date[1:] if ctx.legacy_date.startswith("A") else ctx.legacy_date
+    assert_true(len(timestamp) == 10 and timestamp.isdigit(), "LEGACY_DATE must resolve to a YYYYMMDDHH timestamp")
+    year = timestamp[0:4]
+    month = timestamp[4:6]
+    day = timestamp[6:8]
+
+    step("Fetch available data files")
+    response = get_json(ctx, f"/api/data?year={year}&month={month}&day={day}")
+    assert_equal(response.status_code, 200, "GET /api/data must succeed")
+    payload = response.json()
+    assert_true("files" in payload, "/api/data response must contain files")
+    assert_true(isinstance(payload["files"], list), "/api/data files must be a list")
+
+    timestamps = [item.get("timestamp") for item in payload["files"] if isinstance(item, dict)]
+    assert_true(timestamp in timestamps, f"/api/data must include {timestamp}.dat")
+
+
+def test_web_ui_available(ctx: TestContext) -> None:
+    print_expectation(
+        [
+            "GET /ui returns 200",
+            "HTML contains expected UI markers",
+            "HTML references the native /api/data endpoint",
+        ]
+    )
+
+    step("Fetch web UI")
+    response = requests.get(f"{ctx.base_url}/ui")
+    assert_equal(response.status_code, 200, "GET /ui must succeed")
+    html = response.text
+    assert_true("Meteo Legacy Command UI" in html, "UI page must contain title text")
+    assert_true("Available data" in html, "UI page must contain the available data section")
+    assert_true("/api/data" in html, "UI page must reference /api/data")
+
 def run_test(case: TestCase, ctx: TestContext) -> Tuple[bool, str]:
     header = f"[{case.number:02d}] {case.name}"
     print(f"\n{bold('>>> START TEST')} {header}")
@@ -567,20 +611,22 @@ def main() -> int:
         TestCase(3, "Core API | invalid JSON", test_core_invalid_json),
         TestCase(4, "Core API | unknown operation", test_core_unknown_operation),
         TestCase(5, "Core API | job not found", test_core_job_not_found),
-        TestCase(6, "Legacy | iwv single-point success", test_legacy_iwv_single_point_success),
-        TestCase(7, "Legacy | iwv series success", test_legacy_iwv_series_success),
-        TestCase(8, "Legacy | opacity single-point success", test_legacy_opacity_single_point_success),
-        TestCase(9, "Legacy | opacity series success", test_legacy_opacity_series_success),
-        TestCase(10, "Legacy | meteo single-point success", test_legacy_meteo_single_point_success),
-        TestCase(11, "Legacy | meteo series success", test_legacy_meteo_series_success),
-        TestCase(12, "Legacy | rain single-point success", test_legacy_rain_single_point_success),
-        TestCase(13, "Legacy | missing legacy file expected failure", test_legacy_file_not_found_expected_failure),
-        TestCase(14, "Legacy | unsupported DB expected failure", test_legacy_db_not_found_expected_failure),
-        TestCase(15, "Legacy | epoch out-of-range expected failure", test_legacy_epoch_out_of_range_expected_failure),
-        TestCase(16, "Validation | missing freq for legacy_opacity", test_invalid_parameters_missing_freq_for_opacity),
-        TestCase(17, "Validation | invalid hour type for legacy_rain", test_invalid_parameter_type_for_rain),
-        TestCase(18, "Legacy | tsys single-point success", test_legacy_tsys_single_point_success),
-        TestCase(19, "Legacy | tsys series success", test_legacy_tsys_series_success),
+        TestCase(6, "Native API | data catalog", test_api_data_catalog_success),
+        TestCase(7, "Web UI | page available", test_web_ui_available),
+        TestCase(8, "Legacy | iwv single-point success", test_legacy_iwv_single_point_success),
+        TestCase(9, "Legacy | iwv series success", test_legacy_iwv_series_success),
+        TestCase(10, "Legacy | opacity single-point success", test_legacy_opacity_single_point_success),
+        TestCase(11, "Legacy | opacity series success", test_legacy_opacity_series_success),
+        TestCase(12, "Legacy | meteo single-point success", test_legacy_meteo_single_point_success),
+        TestCase(13, "Legacy | meteo series success", test_legacy_meteo_series_success),
+        TestCase(14, "Legacy | rain single-point success", test_legacy_rain_single_point_success),
+        TestCase(15, "Legacy | missing legacy file expected failure", test_legacy_file_not_found_expected_failure),
+        TestCase(16, "Legacy | unsupported DB expected failure", test_legacy_db_not_found_expected_failure),
+        TestCase(17, "Legacy | epoch out-of-range expected failure", test_legacy_epoch_out_of_range_expected_failure),
+        TestCase(18, "Validation | missing freq for legacy_opacity", test_invalid_parameters_missing_freq_for_opacity),
+        TestCase(19, "Validation | invalid hour type for legacy_rain", test_invalid_parameter_type_for_rain),
+        TestCase(20, "Legacy | tsys single-point success", test_legacy_tsys_single_point_success),
+        TestCase(21, "Legacy | tsys series success", test_legacy_tsys_series_success),
     ]
 
     passed = 0

@@ -6,6 +6,7 @@ from werkzeug.exceptions import BadRequest
 from app.domain.exceptions import InvalidJsonError, InvalidRequestError
 from app.api.legacy_parser import parse_legacy_command, LegacyCommandError
 from app.api.legacy_commands import get_legacy_command_catalog
+from app.api.data_catalog import list_data_files, parse_data_query
 
 
 def register_routes(app: Flask) -> None:
@@ -17,6 +18,17 @@ def register_routes(app: Flask) -> None:
     @app.route("/legacy/commands", methods=["GET"])
     def get_legacy_commands():
         return jsonify({"commands": get_legacy_command_catalog()}), 200
+
+
+    @app.route("/api/data", methods=["GET"])
+    def get_data_catalog():
+        try:
+            query = parse_data_query(request.args)
+            payload = list_data_files(**query)
+        except ValueError as exc:
+            raise InvalidRequestError(str(exc)) from exc
+
+        return jsonify(payload), 200
 
     @app.route("/jobs", methods=["POST"])
     def create_job():
