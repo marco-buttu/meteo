@@ -11,6 +11,21 @@ OperationCatalog = Dict[str, OperationSchema]
 
 
 OPERATION_CATALOG: OperationCatalog = {
+
+    "data": {
+        "description": "List available legacy data files from DATA_DIR/mdata.",
+        "produces_result": True,
+        "produces_plot": False,
+        "required_parameters": {},
+        "optional_parameters": {
+            "year": "integer",
+            "month": "integer",
+            "day": "integer",
+            "from": "string",
+            "to": "string",
+            "limit": "integer",
+        },
+    },
     "get_precipitable_water_vapor": {
         "description": "Estimate precipitable water vapor for a given site and time.",
         "produces_result": True,

@@ -2055,38 +2055,143 @@ That means:
 - migrate legacy computations away from Octave
 - eventually remove transitional legacy adapters once they are no longer needed
 
-## Native data catalog API and UI file selection
+## Asynchronous data catalog operation and UI file selection
 
 The web UI does not require users to type the legacy data timestamp manually.
-It loads available data files from the native Python endpoint:
+It asks the backend for the available data files by creating a normal
+asynchronous job, using the same protocol as the other operations:
 
 ```http
-GET /api/data
+POST /jobs
+GET /jobs/<job_id>
+GET /jobs/<job_id>/result
 ```
 
-The endpoint reads `DATA_DIR/mdata` and returns only files matching the legacy
-format:
+The operation name is:
+
+```text
+data
+```
+
+The `data` operation reads `DATA_DIR/mdata` and returns only files matching the
+legacy data format:
 
 ```text
 YYYYMMDDHH.dat
 ```
 
-For each file, the response includes the filename, timestamp without `.dat`,
-year, month, day and hour.
+For each file, the result includes the filename, timestamp without `.dat`, year,
+month, day and hour.
 
-Examples:
+Example request:
 
 ```bash
-curl http://127.0.0.1:5000/api/data
-curl 'http://127.0.0.1:5000/api/data?year=2026'
-curl 'http://127.0.0.1:5000/api/data?year=2026&month=01'
-curl 'http://127.0.0.1:5000/api/data?year=2026&month=01&day=16'
-curl 'http://127.0.0.1:5000/api/data?from=2026010100&to=2026013123'
-curl 'http://127.0.0.1:5000/api/data?limit=100'
+curl -sS -X POST http://127.0.0.1:5000/jobs \
+  -H "Content-Type: application/json" \
+  -d '{"operation":"data","parameters":{"year":2026,"month":1,"day":16}}'
 ```
 
-If no filter is provided, the endpoint returns the latest available month based
-on the newest timestamp found in `DATA_DIR/mdata`.
+Then poll the returned job as usual:
+
+```bash
+curl -sS http://127.0.0.1:5000/jobs/<JOB_ID>
+curl -sS http://127.0.0.1:5000/jobs/<JOB_ID>/result
+```
+
+Example result payload:
+
+```json
+{
+  "result": {
+    "data_dir": "/dati",
+    "mdata_dir": "/dati/mdata",
+    "count": 1,
+    "limit": 1000,
+    "default_selection": "explicit_filters",
+    "files": [
+      {
+        "filename": "2026011600.dat",
+        "timestamp": "2026011600",
+        "year": 2026,
+        "month": 1,
+        "day": 16,
+        "hour": 0
+      }
+    ]
+  }
+}
+```
+
+### Optional parameters for the `data` operation
+
+All parameters are optional.
+
+```text
+year
+```
+
+Filters files by year. Example: `2026` returns files whose timestamp starts with
+`2026`.
+
+```text
+month
+```
+
+Filters files by month, from `1` to `12`. It is usually used together with
+`year`.
+
+```text
+day
+```
+
+Filters files by day of month, from `1` to `31`. It is usually used together
+with `year` and `month`.
+
+```text
+from
+```
+
+Minimum timestamp included in the result, in `YYYYMMDDHH` format. Example:
+`2026010100` includes files from `2026010100.dat` onward.
+
+```text
+to
+```
+
+Maximum timestamp included in the result, in `YYYYMMDDHH` format. Example:
+`2026013123` includes files up to `2026013123.dat`.
+
+```text
+limit
+```
+
+Maximum number of files returned. This prevents very large responses when the
+data directory contains many files.
+
+### Default behavior
+
+If `year`, `month`, `day`, `from` and `to` are all omitted, the operation returns
+the latest available month, based on the newest timestamp found in
+`DATA_DIR/mdata`.
+
+For example, if the newest file is:
+
+```text
+2026011600.dat
+```
+
+then the default result contains files from January 2026.
+
+The default `limit` is:
+
+```text
+1000
+```
+
+If explicit filters are provided, those filters are applied and the same default
+limit is still used unless `limit` is specified.
+
+### Web UI
 
 In the UI:
 
@@ -2094,9 +2199,13 @@ In the UI:
 http://127.0.0.1:5000/ui
 ```
 
-users can filter available data by year, month and day. The default filter
-values are the current local day. After selecting a file, the UI derives the
-legacy timestamp from the filename automatically. For example:
+users can filter available data by year, month and day. The default filter values
+are the current local day. When the user loads the available data, the UI creates
+a `data` job, waits for it to finish, and uses the job result to populate the data
+file selector.
+
+After selecting a file, the UI derives the legacy timestamp from the filename
+automatically. For example:
 
 ```text
 2026011600.dat -> 2026011600
@@ -2108,6 +2217,6 @@ manual timestamp input field in the normal UI.
 The smoke test suite includes checks for both:
 
 ```text
-GET /api/data
+operation=data
 GET /ui
 ```

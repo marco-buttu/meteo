@@ -301,19 +301,66 @@
     dataDay.value = String(today.getDate()).padStart(2, "0");
   }
 
-  function dataQueryString() {
-    const params = new URLSearchParams();
+  function dataRequestParameters() {
+    const parameters = {};
     if (dataYear.value.trim()) {
-      params.set("year", dataYear.value.trim());
+      parameters.year = Number(dataYear.value.trim());
     }
     if (dataMonth.value.trim()) {
-      params.set("month", dataMonth.value.trim());
+      parameters.month = Number(dataMonth.value.trim());
     }
     if (dataDay.value.trim()) {
-      params.set("day", dataDay.value.trim());
+      parameters.day = Number(dataDay.value.trim());
     }
-    const query = params.toString();
-    return query ? `?${query}` : "";
+    return parameters;
+  }
+
+  async function createOperationJob(operation, parameters) {
+    const response = await fetch("/jobs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ operation, parameters }),
+    });
+    const payload = await response.json();
+
+    if (!response.ok) {
+      throw new Error(payload.message || `Unable to create job: HTTP ${response.status}`);
+    }
+
+    if (!payload.job_id) {
+      throw new Error("Job response does not contain job_id");
+    }
+
+    return payload;
+  }
+
+  async function waitForJobResult(jobId) {
+    while (true) {
+      const metadataResponse = await fetch(`/jobs/${jobId}`);
+      const metadata = await metadataResponse.json();
+
+      if (!metadataResponse.ok) {
+        throw new Error(metadata.message || `Unable to read job status: HTTP ${metadataResponse.status}`);
+      }
+
+      jobStatusNode.textContent = metadata.status || "unknown";
+      jobStatusNode.className = metadata.status === "finished" ? "ok" : metadata.status === "failed" ? "error" : "";
+
+      if (metadata.status === "finished") {
+        const resultResponse = await fetch(`/jobs/${jobId}/result`);
+        const resultPayload = await resultResponse.json();
+        if (!resultResponse.ok) {
+          throw new Error(resultPayload.message || `Unable to read job result: HTTP ${resultResponse.status}`);
+        }
+        return resultPayload.result;
+      }
+
+      if (metadata.status === "failed") {
+        throw new Error(JSON.stringify(metadata.error || metadata));
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
   }
 
   async function loadDataFiles() {
@@ -325,13 +372,17 @@
     updateRunButtonState();
 
     try {
-      const response = await fetch(`/api/data${dataQueryString()}`);
-      const payload = await response.json();
+      const requestPayload = { operation: "data", parameters: dataRequestParameters() };
+      jobIdNode.textContent = "-";
+      jobStatusNode.textContent = "submitting data request";
+      jobStatusNode.className = "";
+      showRequest(requestPayload);
 
-      if (!response.ok) {
-        throw new Error(payload.message || `Unable to load data files: HTTP ${response.status}`);
-      }
+      const metadata = await createOperationJob(requestPayload.operation, requestPayload.parameters);
+      jobIdNode.textContent = metadata.job_id;
+      jobStatusNode.textContent = metadata.status || "queued";
 
+      const payload = await waitForJobResult(metadata.job_id);
       const files = payload.files || [];
       if (files.length === 0) {
         const option = document.createElement("option");
@@ -359,7 +410,7 @@
       option.value = "";
       option.textContent = "Unable to load data files";
       dataFileSelect.appendChild(option);
-      dataHelp.textContent = String(error);
+      dataHelp.textContent = error instanceof Error ? error.message : String(error);
       dataHelp.className = "help error";
     } finally {
       loadDataButton.disabled = false;
