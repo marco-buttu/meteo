@@ -15,7 +15,6 @@ Targets:
   vm-fresh           Destroy and recreate the VirtualBox VM, then deploy again.
   vm-start           Start the existing VirtualBox VM without provisioning.
   vm-stop            Stop the existing VirtualBox VM.
-  docker             Placeholder only. Docker deployment is not implemented yet.
   help               Show this help message.
 
 Common VirtualBox variables:
@@ -83,10 +82,6 @@ run_target() {
       run_vagrant halt
       ok "VM stopped"
       ;;
-    docker)
-      echo "Docker deployment is not implemented yet."
-      exit 0
-      ;;
     -h|--help|help)
       usage
       exit 0
@@ -127,10 +122,6 @@ VirtualBox / Vagrant
   6) Stop existing VM
      Shut down the VM.
 
-Docker
-------
-  7) Docker deployment
-     Not implemented yet.
 
 Other
 -----
