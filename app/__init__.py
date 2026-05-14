@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 from flask import Flask
 
 from app import config as app_config
@@ -10,9 +12,16 @@ from app.services.queue_service import QueueService
 from app.services.storage_service import StorageService
 
 
-def create_app() -> Flask:
-    app = Flask(__name__)
+def _configure_logging() -> None:
+    logging.basicConfig(
+        level=getattr(logging, app_config.LOG_LEVEL, logging.INFO),
+        format='%(asctime)s %(levelname)s [%(name)s] %(message)s',
+    )
 
+
+def create_app() -> Flask:
+    _configure_logging()
+    app = Flask(__name__)
 
     # Ensure runtime directories exist
     app_config.JOB_STORAGE_DIR.mkdir(parents=True, exist_ok=True)
@@ -27,6 +36,12 @@ def create_app() -> Flask:
         FLASK_HOST=app_config.FLASK_HOST,
         FLASK_PORT=app_config.FLASK_PORT,
         FLASK_DEBUG=app_config.FLASK_DEBUG,
+        MAX_CONTENT_LENGTH=app_config.MAX_JSON_BODY_BYTES,
+        MAX_JSON_BODY_BYTES=app_config.MAX_JSON_BODY_BYTES,
+        MAX_LEGACY_COMMAND_LENGTH=app_config.MAX_LEGACY_COMMAND_LENGTH,
+        DATA_OPERATION_DEFAULT_LIMIT=app_config.DATA_OPERATION_DEFAULT_LIMIT,
+        DATA_OPERATION_MAX_LIMIT=app_config.DATA_OPERATION_MAX_LIMIT,
+        LOG_LEVEL=app_config.LOG_LEVEL,
     )
 
     storage_service = StorageService(

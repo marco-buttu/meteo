@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import re
 from typing import Any, Dict, Mapping
 
+from app import config as app_config
 from app.domain.exceptions import (
     InvalidDateTimeError,
     InvalidParametersError,
@@ -76,7 +78,168 @@ def validate_and_normalize_parameters(
             symbolic_type=symbolic_type,
         )
 
-    return normalized_parameters
+    return _apply_parameter_constraints(operation_name, normalized_parameters)
+
+
+def _apply_parameter_constraints(
+    operation_name: str,
+    parameters: Dict[str, Any],
+) -> Dict[str, Any]:
+    """Apply operation-specific validation that cannot be expressed by type only."""
+
+    if operation_name == "data":
+        _validate_year(parameters.get("year"), required=False)
+        _validate_month(parameters.get("month"), required=False)
+        _validate_day(parameters.get("day"), required=False)
+        _validate_timestamp_filter("from", parameters.get("from"))
+        _validate_timestamp_filter("to", parameters.get("to"))
+        _validate_data_limit(parameters.get("limit"))
+
+        start = parameters.get("from")
+        end = parameters.get("to")
+        if start is not None and end is not None and start > end:
+            raise InvalidParametersError(
+                "Parameter 'from' must be less than or equal to parameter 'to'."
+            )
+
+        return parameters
+
+    if operation_name.startswith("legacy_"):
+        if "date" in parameters:
+            _validate_legacy_date(parameters["date"])
+        if "hour" in parameters:
+            _validate_hour(parameters["hour"])
+        if "freq" in parameters:
+            _validate_positive_float("freq", parameters["freq"], max_value=1000.0)
+        if "theta" in parameters:
+            _validate_float_range("theta", parameters["theta"], min_value=0.0, max_value=90.0)
+        if "eta" in parameters:
+            _validate_float_range("eta", parameters["eta"], min_value=0.0, max_value=1.0)
+        if "trec" in parameters:
+            _validate_float_range("trec", parameters["trec"], min_value=0.0, max_value=10000.0)
+        return parameters
+
+    if "site_lat" in parameters:
+        _validate_float_range("site_lat", parameters["site_lat"], min_value=-90.0, max_value=90.0)
+    if "site_lon" in parameters:
+        _validate_float_range("site_lon", parameters["site_lon"], min_value=-180.0, max_value=180.0)
+    if "site_alt_m" in parameters:
+        _validate_float_range("site_alt_m", parameters["site_alt_m"], min_value=-500.0, max_value=10000.0)
+    if "max_altitude_m" in parameters:
+        _validate_positive_float("max_altitude_m", parameters["max_altitude_m"], max_value=100000.0)
+    if "step_m" in parameters:
+        _validate_positive_float("step_m", parameters["step_m"], max_value=100000.0)
+    if "frequency_ghz" in parameters:
+        _validate_positive_float("frequency_ghz", parameters["frequency_ghz"], max_value=1000.0)
+    if "elevation_deg" in parameters:
+        _validate_float_range("elevation_deg", parameters["elevation_deg"], min_value=0.0, max_value=90.0)
+    if "pwv_mm" in parameters:
+        _validate_float_range("pwv_mm", parameters["pwv_mm"], min_value=0.0, max_value=1000.0)
+
+    return parameters
+
+
+def _validate_legacy_date(value: str) -> None:
+    if not re.fullmatch(r"[A-Za-z]\d{10}", value):
+        raise InvalidParametersError(
+            "Parameter 'date' must use legacy format <DB><YYYYMMDDHH>."
+        )
+
+
+def _validate_timestamp_filter(parameter_name: str, value: str | None) -> None:
+    if value is None:
+        return
+    if not re.fullmatch(r"\d{10}", value):
+        raise InvalidParametersError(
+            "Parameter '{name}' must use YYYYMMDDHH format.".format(
+                name=parameter_name
+            )
+        )
+
+
+def _validate_year(value: int | None, *, required: bool) -> None:
+    if value is None:
+        if required:
+            raise InvalidParametersError("Parameter 'year' is required.")
+        return
+    if not 1 <= value <= 9999:
+        raise InvalidParametersError("Parameter 'year' must be between 1 and 9999.")
+
+
+def _validate_month(value: int | None, *, required: bool) -> None:
+    if value is None:
+        if required:
+            raise InvalidParametersError("Parameter 'month' is required.")
+        return
+    if not 1 <= value <= 12:
+        raise InvalidParametersError("Parameter 'month' must be between 1 and 12.")
+
+
+def _validate_day(value: int | None, *, required: bool) -> None:
+    if value is None:
+        if required:
+            raise InvalidParametersError("Parameter 'day' is required.")
+        return
+    if not 1 <= value <= 31:
+        raise InvalidParametersError("Parameter 'day' must be between 1 and 31.")
+
+
+def _validate_data_limit(value: int | None) -> None:
+    if value is None:
+        return
+    if not 1 <= value <= app_config.DATA_OPERATION_MAX_LIMIT:
+        raise InvalidParametersError(
+            "Parameter 'limit' must be between 1 and {max_limit}.".format(
+                max_limit=app_config.DATA_OPERATION_MAX_LIMIT
+            )
+        )
+
+
+def _validate_hour(value: int) -> None:
+    # Keep this validation structural only. The legacy backend decides whether
+    # the requested epoch exists for the selected data file, so out-of-range
+    # epochs must be accepted as jobs and fail asynchronously in the worker.
+    if value < 0:
+        raise InvalidParametersError("Parameter 'hour' must be greater than or equal to 0.")
+
+
+def _validate_positive_float(
+    parameter_name: str,
+    value: float,
+    *,
+    max_value: float | None = None,
+) -> None:
+    if value <= 0.0:
+        raise InvalidParametersError(
+            "Parameter '{name}' must be greater than 0.".format(
+                name=parameter_name
+            )
+        )
+    if max_value is not None and value > max_value:
+        raise InvalidParametersError(
+            "Parameter '{name}' must be less than or equal to {max_value}.".format(
+                name=parameter_name,
+                max_value=max_value,
+            )
+        )
+
+
+def _validate_float_range(
+    parameter_name: str,
+    value: float,
+    *,
+    min_value: float,
+    max_value: float,
+) -> None:
+    if not min_value <= value <= max_value:
+        raise InvalidParametersError(
+            "Parameter '{name}' must be between {min_value} and {max_value}.".format(
+                name=parameter_name,
+                min_value=min_value,
+                max_value=max_value,
+            )
+        )
+
 
 
 def get_operation_capabilities(operation_name: str) -> Dict[str, bool]:
@@ -120,7 +283,21 @@ def _normalize_string(parameter_name: str, value: Any) -> str:
                 parameter_name=parameter_name
             )
         )
-    return value
+
+    normalized = value.strip()
+    if not normalized:
+        raise InvalidParameterTypeError(
+            "Parameter {parameter_name!r} must be a non-empty string.".format(
+                parameter_name=parameter_name
+            )
+        )
+    if len(normalized) > 256:
+        raise InvalidParameterTypeError(
+            "Parameter {parameter_name!r} must be at most 256 characters.".format(
+                parameter_name=parameter_name
+            )
+        )
+    return normalized
 
 
 def _normalize_float(parameter_name: str, value: Any) -> float:

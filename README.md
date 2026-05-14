@@ -2220,3 +2220,89 @@ The smoke test suite includes checks for both:
 operation=data
 GET /ui
 ```
+
+## Application hardening notes
+
+The application is intended to run locally or behind a trusted VPN. This setup does
+not add API-token authentication and does not enable CORS.
+
+### Flask debug mode
+
+Managed deployments must keep Flask debug mode disabled:
+
+```env
+FLASK_DEBUG=0
+```
+
+The deployment flow configures the VirtualBox guest with `FLASK_DEBUG=0`. The
+sample `.env` in this repository also uses `FLASK_DEBUG=0`.
+
+### Request limits
+
+The application enforces a maximum request body size through Flask's
+`MAX_CONTENT_LENGTH` setting. The value is configured with:
+
+```env
+MAX_JSON_BODY_BYTES=65536
+```
+
+Legacy command strings submitted to `POST /legacy/command` are also limited:
+
+```env
+MAX_LEGACY_COMMAND_LENGTH=256
+```
+
+Requests that exceed the body size limit return `REQUEST_TOO_LARGE`. Legacy
+commands that exceed the command length limit return `INVALID_REQUEST`.
+
+### Data operation limits
+
+The asynchronous `data` operation applies a default result limit and a maximum
+allowed limit:
+
+```env
+DATA_OPERATION_DEFAULT_LIMIT=1000
+DATA_OPERATION_MAX_LIMIT=5000
+```
+
+If the client does not provide `limit`, the default limit is used. If the client
+provides a value larger than `DATA_OPERATION_MAX_LIMIT`, the request is rejected.
+
+### Strict parameter validation
+
+The API rejects unknown top-level fields in job requests and legacy command
+requests. Operation parameters are validated by type and by operation-specific
+constraints.
+
+Examples of enforced constraints:
+
+- legacy data timestamps must use `YYYYMMDDHH` and are stored internally as
+  `AYYYYMMDDHH`;
+- `hour` must be between `0` and `23`;
+- `year` must be between `1` and `9999`;
+- `month` must be between `1` and `12`;
+- `day` must be between `1` and `31`;
+- `from` and `to` must use `YYYYMMDDHH`;
+- `from` must be less than or equal to `to`;
+- `freq` and `frequency_ghz` must be positive and not greater than `1000`;
+- `theta` and `elevation_deg` must be between `0` and `90`;
+- `eta` must be between `0` and `1`;
+- `trec` must be between `0` and `10000`.
+
+### Logging
+
+The application logs useful operational events, including:
+
+- job creation;
+- queue submission;
+- accepted legacy jobs;
+- job execution start;
+- job execution completion;
+- job execution failure;
+- unexpected application errors.
+
+The log level is configured with:
+
+```env
+LOG_LEVEL=INFO
+```

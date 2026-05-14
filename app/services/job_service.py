@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import logging
 from typing import Any, Optional
 from uuid import uuid4
 
@@ -19,6 +20,9 @@ from app.services.operation_service import (
 )
 from app.services.queue_service import QueueService
 from app.services.storage_service import StorageService
+
+
+logger = logging.getLogger(__name__)
 
 
 class JobService:
@@ -50,6 +54,11 @@ class JobService:
         )
 
         self._storage_service.save_job_metadata(metadata)
+        logger.info(
+            "Job created: job_id=%s operation=%s",
+            metadata.job_id,
+            metadata.operation,
+        )
 
         try:
             self._queue_service.submit_job(
@@ -57,12 +66,23 @@ class JobService:
                 operation=metadata.operation,
                 validated_parameters=metadata.validated_parameters,
             )
+            logger.info(
+                "Job queued: job_id=%s operation=%s",
+                metadata.job_id,
+                metadata.operation,
+            )
         except QueueError as exc:
             failed_metadata = self._build_queue_failure_metadata(
                 metadata=metadata,
                 message=str(exc),
             )
             self._storage_service.update_job_metadata(failed_metadata)
+            logger.error(
+                "Queue submission failed: job_id=%s operation=%s error=%s",
+                metadata.job_id,
+                metadata.operation,
+                exc,
+            )
             raise QueueSubmissionError(
                 job_id=metadata.job_id,
                 message=(

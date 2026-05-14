@@ -408,3 +408,25 @@ Restart both services after editing `.env`:
 ```bash
 sudo systemctl restart meteo-app meteo-worker
 ```
+
+## Application hardening defaults
+
+For managed deployments, keep Flask debug mode disabled:
+
+```env
+FLASK_DEBUG=0
+```
+
+The application also supports these optional limits:
+
+```env
+MAX_JSON_BODY_BYTES=65536
+MAX_LEGACY_COMMAND_LENGTH=256
+DATA_OPERATION_DEFAULT_LIMIT=1000
+DATA_OPERATION_MAX_LIMIT=5000
+LOG_LEVEL=INFO
+```
+
+These settings limit request size, legacy command length and the maximum number
+of files returned by the asynchronous `data` operation. They also control the
+application log level.

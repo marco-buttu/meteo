@@ -23,6 +23,19 @@ def _get_int_env(name: str, default: int) -> int:
         ) from exc
 
 
+def _get_bool_env(name: str, default: bool = False) -> bool:
+    raw_value = os.getenv(name)
+    if raw_value is None:
+        return default
+
+    return raw_value.strip().lower() in {
+        '1',
+        'true',
+        'yes',
+        'on',
+    }
+
+
 def _get_path_env(name: str, default: Path | str | None = None) -> Path:
     raw_value = os.getenv(name)
     if raw_value is None:
@@ -60,9 +73,12 @@ RQ_QUEUE_NAME = os.getenv('RQ_QUEUE_NAME', 'default')
 
 FLASK_HOST = os.getenv('FLASK_HOST', '127.0.0.1')
 FLASK_PORT = _get_int_env('FLASK_PORT', 5000)
-FLASK_DEBUG = os.getenv('FLASK_DEBUG', '').strip().lower() in {
-    '1',
-    'true',
-    'yes',
-    'on',
-}
+FLASK_DEBUG = _get_bool_env('FLASK_DEBUG', False)
+
+# Application-level hardening defaults. These are intentionally conservative
+# and can be overridden from .env when needed.
+MAX_JSON_BODY_BYTES = _get_int_env('MAX_JSON_BODY_BYTES', 65536)
+MAX_LEGACY_COMMAND_LENGTH = _get_int_env('MAX_LEGACY_COMMAND_LENGTH', 256)
+DATA_OPERATION_DEFAULT_LIMIT = _get_int_env('DATA_OPERATION_DEFAULT_LIMIT', 1000)
+DATA_OPERATION_MAX_LIMIT = _get_int_env('DATA_OPERATION_MAX_LIMIT', 5000)
+LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO').strip().upper() or 'INFO'
