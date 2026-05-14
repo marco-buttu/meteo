@@ -6,9 +6,11 @@ from pathlib import Path
 from typing import Any
 
 from app import config as app_config
+from app.domain.exceptions import OperationError
 
 
 DATA_FILE_PATTERN = re.compile(r"^(?P<timestamp>\d{10})\.dat$")
+DEFAULT_LIMIT = 1000
 
 
 @dataclass(frozen=True)
@@ -31,6 +33,20 @@ class DataFile:
         }
 
 
+def handle(params: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "result": list_data_files(
+            year=params.get("year"),
+            month=params.get("month"),
+            day=params.get("day"),
+            start=params.get("from"),
+            end=params.get("to"),
+            limit=params.get("limit"),
+        ),
+        "plot_bytes": None,
+    }
+
+
 def list_data_files(
     *,
     year: int | None = None,
@@ -40,6 +56,9 @@ def list_data_files(
     end: str | None = None,
     limit: int | None = None,
 ) -> dict[str, Any]:
+    _validate_filters(year=year, month=month, day=day, start=start, end=end, limit=limit)
+
+    effective_limit = DEFAULT_LIMIT if limit is None else limit
     data_dir = app_config.DATA_DIR
     mdata_dir = data_dir / "mdata"
 
@@ -49,32 +68,36 @@ def list_data_files(
             "mdata_dir": str(mdata_dir),
             "count": 0,
             "files": [],
+            "limit": effective_limit,
+            "default_selection": _default_selection_name(
+                year=year,
+                month=month,
+                day=day,
+                start=start,
+                end=end,
+            ),
             "warning": "mdata directory does not exist or is not readable",
         }
 
     files = _scan_mdata_files(mdata_dir)
+    default_selection = _default_selection_name(
+        year=year,
+        month=month,
+        day=day,
+        start=start,
+        end=end,
+    )
     files = _apply_latest_month_default(files, year=year, month=month, day=day, start=start, end=end)
     files = _filter_files(files, year=year, month=month, day=day, start=start, end=end)
-
-    if limit is not None:
-        files = files[:limit]
+    files = files[:effective_limit]
 
     return {
         "data_dir": str(data_dir),
         "mdata_dir": str(mdata_dir),
         "count": len(files),
+        "limit": effective_limit,
+        "default_selection": default_selection,
         "files": [item.to_dict() for item in files],
-    }
-
-
-def parse_data_query(args: Any) -> dict[str, Any]:
-    return {
-        "year": _parse_int_arg(args, "year", minimum=0),
-        "month": _parse_int_arg(args, "month", minimum=1, maximum=12),
-        "day": _parse_int_arg(args, "day", minimum=1, maximum=31),
-        "start": _parse_timestamp_arg(args, "from"),
-        "end": _parse_timestamp_arg(args, "to"),
-        "limit": _parse_int_arg(args, "limit", minimum=1),
     }
 
 
@@ -147,30 +170,39 @@ def _filter_files(
     return filtered
 
 
-def _parse_int_arg(args: Any, name: str, *, minimum: int | None = None, maximum: int | None = None) -> int | None:
-    value = args.get(name)
-    if value is None or value == "":
-        return None
+def _validate_filters(
+    *,
+    year: int | None,
+    month: int | None,
+    day: int | None,
+    start: str | None,
+    end: str | None,
+    limit: int | None,
+) -> None:
+    if year is not None and year < 0:
+        raise OperationError("Parameter 'year' must be >= 0.", code="INVALID_PARAMETERS")
+    if month is not None and not 1 <= month <= 12:
+        raise OperationError("Parameter 'month' must be between 1 and 12.", code="INVALID_PARAMETERS")
+    if day is not None and not 1 <= day <= 31:
+        raise OperationError("Parameter 'day' must be between 1 and 31.", code="INVALID_PARAMETERS")
+    if start is not None and not re.fullmatch(r"\d{10}", start):
+        raise OperationError("Parameter 'from' must use YYYYMMDDHH format.", code="INVALID_PARAMETERS")
+    if end is not None and not re.fullmatch(r"\d{10}", end):
+        raise OperationError("Parameter 'to' must use YYYYMMDDHH format.", code="INVALID_PARAMETERS")
+    if start is not None and end is not None and start > end:
+        raise OperationError("Parameter 'from' must be <= parameter 'to'.", code="INVALID_PARAMETERS")
+    if limit is not None and limit < 1:
+        raise OperationError("Parameter 'limit' must be >= 1.", code="INVALID_PARAMETERS")
 
-    try:
-        parsed = int(value)
-    except ValueError as exc:
-        raise ValueError(f"Query parameter '{name}' must be an integer.") from exc
 
-    if minimum is not None and parsed < minimum:
-        raise ValueError(f"Query parameter '{name}' must be >= {minimum}.")
-    if maximum is not None and parsed > maximum:
-        raise ValueError(f"Query parameter '{name}' must be <= {maximum}.")
-
-    return parsed
-
-
-def _parse_timestamp_arg(args: Any, name: str) -> str | None:
-    value = args.get(name)
-    if value is None or value == "":
-        return None
-
-    if not re.fullmatch(r"\d{10}", value):
-        raise ValueError(f"Query parameter '{name}' must use YYYYMMDDHH format.")
-
-    return value
+def _default_selection_name(
+    *,
+    year: int | None,
+    month: int | None,
+    day: int | None,
+    start: str | None,
+    end: str | None,
+) -> str:
+    if year is None and month is None and day is None and start is None and end is None:
+        return "latest_available_month"
+    return "explicit_filters"

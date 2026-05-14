@@ -9,6 +9,7 @@ from app.domain.exceptions import UnknownOperationError
 from app.operations.schemas import OPERATION_CATALOG
 
 try:
+    from app.operations.handlers.data_catalog import handle as handle_data_catalog
     from app.operations.handlers.get_precipitable_water_vapor import handle as handle_get_precipitable_water_vapor
     from app.operations.handlers.get_system_temperature_estimate import handle as handle_get_system_temperature_estimate
     from app.operations.handlers.get_wind_profile import handle as handle_get_wind_profile
@@ -35,6 +36,7 @@ def _build_handler_registry() -> Dict[str, OperationHandler]:
         return {}
 
     return {
+        "data": handle_data_catalog,
         "get_precipitable_water_vapor": handle_get_precipitable_water_vapor,
         "get_wind_profile": handle_get_wind_profile,
         "get_system_temperature_estimate": handle_get_system_temperature_estimate,

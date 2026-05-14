@@ -530,30 +530,34 @@ def test_legacy_tsys_series_success(ctx: TestContext) -> None:
 
 
 
-def test_api_data_catalog_success(ctx: TestContext) -> None:
+def test_data_catalog_job_success(ctx: TestContext) -> None:
     print_expectation(
         [
-            "GET /api/data returns 200",
-            "response contains a files list",
+            "POST /jobs accepts operation=data",
+            "data job finishes successfully",
+            "result contains a files list",
             "configured legacy data file is listed when filtered by date",
         ]
     )
 
     timestamp = ctx.legacy_date[1:] if ctx.legacy_date.startswith("A") else ctx.legacy_date
     assert_true(len(timestamp) == 10 and timestamp.isdigit(), "LEGACY_DATE must resolve to a YYYYMMDDHH timestamp")
-    year = timestamp[0:4]
-    month = timestamp[4:6]
-    day = timestamp[6:8]
 
-    step("Fetch available data files")
-    response = get_json(ctx, f"/api/data?year={year}&month={month}&day={day}")
-    assert_equal(response.status_code, 200, "GET /api/data must succeed")
-    payload = response.json()
-    assert_true("files" in payload, "/api/data response must contain files")
-    assert_true(isinstance(payload["files"], list), "/api/data files must be a list")
+    parameters = {
+        "year": int(timestamp[0:4]),
+        "month": int(timestamp[4:6]),
+        "day": int(timestamp[6:8]),
+    }
+
+    job_id = create_job(ctx, "data", parameters)
+    wait_for_completion(ctx, job_id, expected_final_status="finished")
+    payload = fetch_result(ctx, job_id)["result"]
+
+    assert_true("files" in payload, "data operation result must contain files")
+    assert_true(isinstance(payload["files"], list), "data operation files must be a list")
 
     timestamps = [item.get("timestamp") for item in payload["files"] if isinstance(item, dict)]
-    assert_true(timestamp in timestamps, f"/api/data must include {timestamp}.dat")
+    assert_true(timestamp in timestamps, f"data operation must include {timestamp}.dat")
 
 
 def test_web_ui_available(ctx: TestContext) -> None:
@@ -561,7 +565,7 @@ def test_web_ui_available(ctx: TestContext) -> None:
         [
             "GET /ui returns 200",
             "HTML contains expected UI markers",
-            "HTML references the native /api/data endpoint",
+            "HTML uses the asynchronous data operation",
         ]
     )
 
@@ -571,7 +575,7 @@ def test_web_ui_available(ctx: TestContext) -> None:
     html = response.text
     assert_true("Meteo Legacy Command UI" in html, "UI page must contain title text")
     assert_true("Available data" in html, "UI page must contain the available data section")
-    assert_true("/api/data" in html, "UI page must reference /api/data")
+    assert_true('operation: "data"' in html or 'operation = "data"' in html or 'operation, parameters' in html, "UI page must use the asynchronous data operation")
 
 def run_test(case: TestCase, ctx: TestContext) -> Tuple[bool, str]:
     header = f"[{case.number:02d}] {case.name}"
@@ -611,7 +615,7 @@ def main() -> int:
         TestCase(3, "Core API | invalid JSON", test_core_invalid_json),
         TestCase(4, "Core API | unknown operation", test_core_unknown_operation),
         TestCase(5, "Core API | job not found", test_core_job_not_found),
-        TestCase(6, "Native API | data catalog", test_api_data_catalog_success),
+        TestCase(6, "Operation | data catalog", test_data_catalog_job_success),
         TestCase(7, "Web UI | page available", test_web_ui_available),
         TestCase(8, "Legacy | iwv single-point success", test_legacy_iwv_single_point_success),
         TestCase(9, "Legacy | iwv series success", test_legacy_iwv_series_success),
