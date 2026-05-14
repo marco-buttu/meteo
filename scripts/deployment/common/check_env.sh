@@ -61,6 +61,19 @@ require_int() {
   ok "${name} is a valid integer"
 }
 
+require_bool() {
+  local name="$1"
+  require_var "$name"
+  case "${!name}" in
+    0|1|true|false|yes|no|on|off|TRUE|FALSE|YES|NO|ON|OFF)
+      ok "${name} is a valid boolean"
+      ;;
+    *)
+      fail "Environment variable ${name} must be a boolean-like value: ${!name}"
+      ;;
+  esac
+}
+
 resolve_path() {
   local raw_path="$1"
   local path
@@ -137,7 +150,12 @@ require_var OCTAVE_BIN
 require_int OCTAVE_TIMEOUT_SECONDS
 require_var FLASK_HOST
 require_int FLASK_PORT
-require_var FLASK_DEBUG
+require_bool FLASK_DEBUG
+
+if [[ -n "${MAX_JSON_BODY_BYTES:-}" ]]; then require_int MAX_JSON_BODY_BYTES; fi
+if [[ -n "${MAX_LEGACY_COMMAND_LENGTH:-}" ]]; then require_int MAX_LEGACY_COMMAND_LENGTH; fi
+if [[ -n "${DATA_OPERATION_DEFAULT_LIMIT:-}" ]]; then require_int DATA_OPERATION_DEFAULT_LIMIT; fi
+if [[ -n "${DATA_OPERATION_MAX_LIMIT:-}" ]]; then require_int DATA_OPERATION_MAX_LIMIT; fi
 
 check_writable_dir "JOB_STORAGE_DIR" "$JOB_STORAGE_DIR"
 check_writable_dir "PLOT_STORAGE_DIR" "$PLOT_STORAGE_DIR"

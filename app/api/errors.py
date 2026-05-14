@@ -1,16 +1,17 @@
 from __future__ import annotations
 
+import logging
 from typing import Tuple
 
 from flask import Flask, jsonify
-from werkzeug.exceptions import HTTPException
+from werkzeug.exceptions import HTTPException, RequestEntityTooLarge
 
 from app.domain.exceptions import (
-    InvalidDateTimeError,
     InvalidJsonError,
-    InvalidParameterTypeError,
-    InvalidParametersError,
     InvalidRequestError,
+    InvalidDateTimeError,
+    InvalidParametersError,
+    InvalidParameterTypeError,
     JobFailedError,
     JobNotFoundError,
     MissingParameterError,
@@ -21,6 +22,9 @@ from app.domain.exceptions import (
     UnexpectedParameterError,
     UnknownOperationError,
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 def _build_error_response(code: str, message: str, status_code: int):
@@ -83,8 +87,17 @@ def register_error_handlers(app: Flask) -> None:
     def handle_queue_submission_failure(error: QueueSubmissionError):
         return _build_error_response('QUEUE_SUBMISSION_FAILED', str(error), 503)
 
+    @app.errorhandler(RequestEntityTooLarge)
+    def handle_request_entity_too_large(error: RequestEntityTooLarge):
+        return _build_error_response(
+            'REQUEST_TOO_LARGE',
+            'Request body is too large.',
+            413,
+        )
+
     @app.errorhandler(Exception)
     def handle_unexpected_error(error: Exception):
         if isinstance(error, HTTPException):
             return error
+        logger.exception('Unhandled application error')
         return _build_error_response('INTERNAL_ERROR', 'Internal server error.', 500)

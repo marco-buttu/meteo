@@ -10,7 +10,6 @@ from app.domain.exceptions import OperationError
 
 
 DATA_FILE_PATTERN = re.compile(r"^(?P<timestamp>\d{10})\.dat$")
-DEFAULT_LIMIT = 1000
 
 
 @dataclass(frozen=True)
@@ -58,7 +57,7 @@ def list_data_files(
 ) -> dict[str, Any]:
     _validate_filters(year=year, month=month, day=day, start=start, end=end, limit=limit)
 
-    effective_limit = DEFAULT_LIMIT if limit is None else limit
+    effective_limit = app_config.DATA_OPERATION_DEFAULT_LIMIT if limit is None else limit
     data_dir = app_config.DATA_DIR
     mdata_dir = data_dir / "mdata"
 
@@ -193,6 +192,13 @@ def _validate_filters(
         raise OperationError("Parameter 'from' must be <= parameter 'to'.", code="INVALID_PARAMETERS")
     if limit is not None and limit < 1:
         raise OperationError("Parameter 'limit' must be >= 1.", code="INVALID_PARAMETERS")
+    if limit is not None and limit > app_config.DATA_OPERATION_MAX_LIMIT:
+        raise OperationError(
+            "Parameter 'limit' must be <= {max_limit}.".format(
+                max_limit=app_config.DATA_OPERATION_MAX_LIMIT
+            ),
+            code="INVALID_PARAMETERS",
+        )
 
 
 def _default_selection_name(

@@ -573,7 +573,7 @@ def test_web_ui_available(ctx: TestContext) -> None:
     response = requests.get(f"{ctx.base_url}/ui")
     assert_equal(response.status_code, 200, "GET /ui must succeed")
     html = response.text
-    assert_true("Meteo Legacy Command UI" in html, "UI page must contain title text")
+    assert_true("Meteo Command UI" in html, "UI page must contain title text")
     assert_true("Available data" in html, "UI page must contain the available data section")
     assert_true('operation: "data"' in html or 'operation = "data"' in html or 'operation, parameters' in html, "UI page must use the asynchronous data operation")
 

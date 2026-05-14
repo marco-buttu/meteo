@@ -1,11 +1,22 @@
 from __future__ import annotations
 
+import logging
+from typing import Any
+
 from flask import Flask, Response, current_app, jsonify, render_template, request
 from werkzeug.exceptions import BadRequest
 
+from app import config as app_config
 from app.domain.exceptions import InvalidJsonError, InvalidRequestError
 from app.api.legacy_parser import parse_legacy_command, LegacyCommandError
 from app.api.legacy_commands import get_legacy_command_catalog
+
+
+logger = logging.getLogger(__name__)
+
+
+_CREATE_JOB_FIELDS = {"operation", "parameters"}
+_LEGACY_JSON_FIELDS = {"command"}
 
 
 def register_routes(app: Flask) -> None:
@@ -18,7 +29,6 @@ def register_routes(app: Flask) -> None:
     def get_legacy_commands():
         return jsonify({"commands": get_legacy_command_catalog()}), 200
 
-
     @app.route("/jobs", methods=["POST"])
     def create_job():
         payload = _parse_create_job_payload()
@@ -27,6 +37,11 @@ def register_routes(app: Flask) -> None:
         metadata = job_service.create_job(
             operation=payload["operation"],
             parameters=payload["parameters"],
+        )
+        logger.info(
+            "Job accepted: job_id=%s operation=%s",
+            metadata.job_id,
+            metadata.operation,
         )
         return jsonify(metadata.to_dict()), 202
 
@@ -66,6 +81,8 @@ def register_routes(app: Flask) -> None:
             if not isinstance(payload, dict):
                 raise InvalidRequestError("Request body must be a JSON object.")
 
+            _reject_unexpected_fields(payload, _LEGACY_JSON_FIELDS)
+
             if "command" not in payload:
                 raise InvalidRequestError("Missing required top-level field 'command'.")
 
@@ -79,6 +96,13 @@ def register_routes(app: Flask) -> None:
             if not command:
                 raise InvalidRequestError("Request body is missing.")
 
+        if len(command) > app_config.MAX_LEGACY_COMMAND_LENGTH:
+            raise InvalidRequestError(
+                "Legacy command is too long. Maximum length is {max_length} characters.".format(
+                    max_length=app_config.MAX_LEGACY_COMMAND_LENGTH
+                )
+            )
+
         try:
             parsed = parse_legacy_command(command)
         except LegacyCommandError as exc:
@@ -89,9 +113,16 @@ def register_routes(app: Flask) -> None:
             operation=parsed["operation"],
             parameters=parsed["parameters"],
         )
+        logger.info(
+            "Legacy job accepted: job_id=%s operation=%s command=%s",
+            metadata.job_id,
+            metadata.operation,
+            command,
+        )
         return jsonify(metadata.to_dict()), 202
 
-def _parse_create_job_payload():
+
+def _parse_create_job_payload() -> dict[str, Any]:
     raw_body = request.get_data(cache=True)
     if not raw_body:
         raise InvalidJsonError("Request body is missing.")
@@ -106,6 +137,8 @@ def _parse_create_job_payload():
 
     if not isinstance(payload, dict):
         raise InvalidRequestError("Request body must be a JSON object.")
+
+    _reject_unexpected_fields(payload, _CREATE_JOB_FIELDS)
 
     if "operation" not in payload:
         raise InvalidRequestError("Missing required top-level field 'operation'.")
@@ -126,3 +159,13 @@ def _parse_create_job_payload():
         "operation": operation.strip(),
         "parameters": parameters,
     }
+
+
+def _reject_unexpected_fields(payload: dict[str, Any], allowed_fields: set[str]) -> None:
+    unexpected = sorted(set(payload) - allowed_fields)
+    if unexpected:
+        raise InvalidRequestError(
+            "Unexpected top-level field(s): {fields}.".format(
+                fields=", ".join(unexpected)
+            )
+        )

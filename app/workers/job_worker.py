@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import logging
 from typing import Any, Dict, Optional
 
 from app.domain.exceptions import (
@@ -12,6 +13,9 @@ from app.domain.exceptions import (
 from app.domain.job_models import JobError, JobMetadata, OperationOutput
 from app.services.operation_service import get_operation_handler
 from app.services.storage_service import StorageService
+
+
+logger = logging.getLogger(__name__)
 
 
 class JobWorker:
@@ -27,6 +31,7 @@ class JobWorker:
         validated_parameters: Dict[str, Any],
     ) -> None:
         metadata = self._storage.load_job_metadata(job_id)
+        logger.info("Job execution starting: job_id=%s operation=%s", job_id, operation)
         started_metadata = self._mark_started(metadata)
         self._storage.update_job_metadata(started_metadata)
 
@@ -47,6 +52,13 @@ class JobWorker:
                 has_plot=output.plot_bytes is not None,
             )
             self._storage.update_job_metadata(finished_metadata)
+            logger.info(
+                "Job execution finished: job_id=%s operation=%s has_result=%s has_plot=%s",
+                job_id,
+                operation,
+                output.result is not None,
+                output.plot_bytes is not None,
+            )
 
         except Exception as exc:
             failed_metadata = self._build_failed_metadata(
@@ -54,6 +66,13 @@ class JobWorker:
                 exception=exc,
             )
             self._storage.update_job_metadata(failed_metadata)
+            logger.error(
+                "Job execution failed: job_id=%s operation=%s error_code=%s",
+                job_id,
+                operation,
+                failed_metadata.error.code if failed_metadata.error else "UNKNOWN",
+                exc_info=True,
+            )
 
     def _validate_output(self, raw_output: Any) -> OperationOutput:
         if not isinstance(raw_output, dict):
