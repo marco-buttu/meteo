@@ -19,6 +19,12 @@ HOST_DATA_DIR = ENV['HOST_DATA_DIR']
 GUEST_DATA_DIR = ENV.fetch('GUEST_DATA_DIR', '/dati')
 HOST_APP_IP = ENV.fetch('HOST_APP_IP', '127.0.0.1')
 HOST_APP_PORT = ENV.fetch('HOST_APP_PORT', '5000').to_i
+VM_NETWORK_MODE = ENV.fetch('VM_NETWORK_MODE', 'nat')
+VM_BRIDGE_INTERFACE = ENV['VM_BRIDGE_INTERFACE']
+VM_STATIC_IP = ENV.fetch('VM_STATIC_IP', '192.168.140.45')
+VM_STATIC_NETMASK = ENV.fetch('VM_STATIC_NETMASK', '255.255.255.0')
+VM_STATIC_GATEWAY = ENV.fetch('VM_STATIC_GATEWAY', '192.168.140.1')
+VM_STATIC_DNS = ENV.fetch('VM_STATIC_DNS', '192.168.110.11')
 VM_MEMORY = ENV.fetch('VM_MEMORY', '4096').to_i
 VM_CPUS = ENV.fetch('VM_CPUS', '2').to_i
 
@@ -34,15 +40,32 @@ if HAS_DATA_DIR && !File.directory?(HOST_DATA_DIR)
   raise "HOST_DATA_DIR does not exist or is not a directory: #{HOST_DATA_DIR}"
 end
 
+unless %w[nat static].include?(VM_NETWORK_MODE)
+  raise "Unsupported VM_NETWORK_MODE: #{VM_NETWORK_MODE}. Expected 'nat' or 'static'."
+end
+
 Vagrant.configure('2') do |config|
   config.vm.box = VAGRANT_BOX
   config.vm.hostname = 'meteo-vm'
 
-  config.vm.network 'forwarded_port',
-                    guest: 5000,
-                    host: HOST_APP_PORT,
-                    host_ip: HOST_APP_IP,
-                    auto_correct: false
+  if VM_NETWORK_MODE == 'static'
+    if VM_BRIDGE_INTERFACE.nil? || VM_BRIDGE_INTERFACE.strip.empty?
+      config.vm.network 'public_network',
+                        ip: VM_STATIC_IP,
+                        netmask: VM_STATIC_NETMASK
+    else
+      config.vm.network 'public_network',
+                        ip: VM_STATIC_IP,
+                        netmask: VM_STATIC_NETMASK,
+                        bridge: VM_BRIDGE_INTERFACE
+    end
+  else
+    config.vm.network 'forwarded_port',
+                      guest: 5000,
+                      host: HOST_APP_PORT,
+                      host_ip: HOST_APP_IP,
+                      auto_correct: false
+  end
 
   config.vm.synced_folder '.', '/vagrant', type: 'virtualbox'
 
@@ -65,6 +88,11 @@ Vagrant.configure('2') do |config|
                       env: {
                         'GUEST_DATA_DIR' => GUEST_DATA_DIR,
                         'METEO_RUN_USER' => 'vagrant',
-                        'METEO_RUN_GROUP' => 'vagrant'
+                        'METEO_RUN_GROUP' => 'vagrant',
+                        'VM_NETWORK_MODE' => VM_NETWORK_MODE,
+                        'VM_STATIC_IP' => VM_STATIC_IP,
+                        'VM_STATIC_NETMASK' => VM_STATIC_NETMASK,
+                        'VM_STATIC_GATEWAY' => VM_STATIC_GATEWAY,
+                        'VM_STATIC_DNS' => VM_STATIC_DNS
                       }
 end
