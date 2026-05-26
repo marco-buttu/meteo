@@ -22,6 +22,8 @@ Common VirtualBox variables:
                      during deployment and saved in .deployment/vagrant.env.
   GUEST_DATA_DIR     Directory where host data are mounted in the VM. Default: /dati
   HOST_APP_PORT      Host port forwarded to guest port 5000. Default: 5000
+  HOST_APP_IP        Host IP where the forwarded app port is exposed.
+                     Default: 127.0.0.1. Use 0.0.0.0 to listen on all host IPs.
   RUN_SMOKE_TESTS    Run host-side smoke tests after VM deployment. Default: 1
                      Set to 0 to skip.
 

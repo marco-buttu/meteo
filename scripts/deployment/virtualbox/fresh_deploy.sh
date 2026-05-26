@@ -4,6 +4,7 @@ set -euo pipefail
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 ASSUME_YES="${ASSUME_YES:-0}"
 HOST_DEP_CHECK="${PROJECT_ROOT}/scripts/deployment/host/check_dependencies.sh"
+VAGRANT_ENV_FILE="${PROJECT_ROOT}/.deployment/vagrant.env"
 
 usage() {
   cat <<'USAGE'
@@ -19,6 +20,10 @@ Options:
 Environment variables:
   HOST_DATA_DIR      Optional. If unset, deploy_virtualbox.sh asks for it or
                      reads it from .deployment/vagrant.env.
+  HOST_APP_IP        Optional. If unset, deploy_virtualbox.sh asks how the
+                     forwarded app port should be exposed, unless a saved
+                     .deployment/vagrant.env file is reused.
+  HOST_APP_PORT      Host port forwarded to guest port 5000. Default: 5000
   RUN_SMOKE_TESTS    Run host-side smoke tests after deployment. Default: 1
                      Set to 0 to skip.
   INSTALL_HOST_DEPS  Host dependency installation mode:
@@ -71,6 +76,46 @@ WARNING
   esac
 }
 
+handle_saved_vagrant_env() {
+  local answer=""
+
+  if [[ ! -f "${VAGRANT_ENV_FILE}" ]]; then
+    return 0
+  fi
+
+  if [[ "${ASSUME_YES}" == "1" ]]; then
+    ok "Reusing saved Vagrant deployment configuration: ${VAGRANT_ENV_FILE}"
+    return 0
+  fi
+
+  cat <<EOF_PROMPT
+A saved Vagrant deployment configuration was found:
+  ${VAGRANT_ENV_FILE}
+
+How should the fresh deployment proceed?
+
+1) Reuse the current configuration
+2) Delete the saved configuration and ask again
+
+EOF_PROMPT
+
+  read -r -p "Select an option [1]: " answer
+  answer="${answer:-1}"
+
+  case "${answer}" in
+    1)
+      ok "Reusing saved Vagrant deployment configuration: ${VAGRANT_ENV_FILE}"
+      ;;
+    2)
+      ok "Deleting saved Vagrant deployment configuration"
+      rm -f "${VAGRANT_ENV_FILE}"
+      ;;
+    *)
+      fail "Invalid saved configuration option: ${answer}"
+      ;;
+  esac
+}
+
 [[ -f "${PROJECT_ROOT}/Vagrantfile" ]] || fail "Vagrantfile not found in project root: ${PROJECT_ROOT}"
 [[ -x "${HOST_DEP_CHECK}" ]] || fail "Host dependency check script not found or not executable: ${HOST_DEP_CHECK}"
 
@@ -84,6 +129,8 @@ vagrant destroy -f || true
 
 ok "Removing local Vagrant state directory"
 rm -rf "${PROJECT_ROOT}/.vagrant"
+
+handle_saved_vagrant_env
 
 ok "Running fresh VirtualBox deployment"
 bash "${PROJECT_ROOT}/scripts/deployment/virtualbox/deploy_virtualbox.sh"
