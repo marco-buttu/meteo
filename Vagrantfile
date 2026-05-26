@@ -17,6 +17,7 @@ end
 VAGRANT_BOX = ENV.fetch('VAGRANT_BOX', 'ubuntu/jammy64')
 HOST_DATA_DIR = ENV['HOST_DATA_DIR']
 GUEST_DATA_DIR = ENV.fetch('GUEST_DATA_DIR', '/dati')
+HOST_APP_IP = ENV.fetch('HOST_APP_IP', '127.0.0.1')
 HOST_APP_PORT = ENV.fetch('HOST_APP_PORT', '5000').to_i
 VM_MEMORY = ENV.fetch('VM_MEMORY', '4096').to_i
 VM_CPUS = ENV.fetch('VM_CPUS', '2').to_i
@@ -37,7 +38,11 @@ Vagrant.configure('2') do |config|
   config.vm.box = VAGRANT_BOX
   config.vm.hostname = 'meteo-vm'
 
-  config.vm.network 'forwarded_port', guest: 5000, host: HOST_APP_PORT, auto_correct: false
+  config.vm.network 'forwarded_port',
+                    guest: 5000,
+                    host: HOST_APP_PORT,
+                    host_ip: HOST_APP_IP,
+                    auto_correct: false
 
   config.vm.synced_folder '.', '/vagrant', type: 'virtualbox'
 

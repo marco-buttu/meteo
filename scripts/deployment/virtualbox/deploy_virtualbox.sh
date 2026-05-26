@@ -4,6 +4,7 @@ set -euo pipefail
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 HOST_DATA_DIR="${HOST_DATA_DIR:-}"
 GUEST_DATA_DIR="${GUEST_DATA_DIR:-/dati}"
+HOST_APP_IP="${HOST_APP_IP:-}"
 HOST_APP_PORT="${HOST_APP_PORT:-5000}"
 RUN_SMOKE_TESTS="${RUN_SMOKE_TESTS:-1}"
 HOST_SMOKE_VENV="${HOST_SMOKE_VENV:-${PROJECT_ROOT}/.deployment/host-smoke-venv}"
@@ -28,6 +29,8 @@ Environment variables:
                      .deployment/vagrant.env. Data directory on host.
   GUEST_DATA_DIR     Directory where host data are mounted in the VM. Default: /dati
   HOST_APP_PORT      Host port forwarded to guest port 5000. Default: 5000
+  HOST_APP_IP        Host IP where the forwarded app port is exposed.
+                     Default: 127.0.0.1. Use 0.0.0.0 to listen on all host IPs.
   VAGRANT_BOX        Ubuntu Vagrant box. Default: ubuntu/jammy64
   VM_MEMORY          VM memory in MB. Default: 4096
   VM_CPUS            VM CPU count. Default: 2
@@ -41,10 +44,13 @@ Environment variables:
 Examples:
   HOST_DATA_DIR=/home/marco/wrf/data ./deploy.sh virtualbox
   HOST_DATA_DIR=/home/marco/wrf/data HOST_APP_PORT=5001 ./deploy.sh virtualbox
+  HOST_DATA_DIR=/home/marco/wrf/data HOST_APP_IP=192.168.1.50 ./deploy.sh virtualbox
+  HOST_DATA_DIR=/home/marco/wrf/data HOST_APP_IP=0.0.0.0 ./deploy.sh virtualbox
   HOST_DATA_DIR=/home/marco/wrf/data RUN_SMOKE_TESTS=0 ./deploy.sh virtualbox
 
-The selected host data directory is saved in .deployment/vagrant.env so that
-later commands such as `vagrant up` can reuse it automatically.
+The selected host data directory, host app IP and host app port are saved in
+.deployment/vagrant.env so that later commands such as `vagrant up` can reuse
+them automatically.
 USAGE
 }
 
@@ -109,21 +115,86 @@ is_false() {
   esac
 }
 
+is_valid_ipv4() {
+  local ip="$1"
+  local octet
+
+  [[ "${ip}" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]] || return 1
+
+  IFS='.' read -r -a octets <<< "${ip}"
+  for octet in "${octets[@]}"; do
+    [[ "${octet}" =~ ^[0-9]+$ ]] || return 1
+    ((octet >= 0 && octet <= 255)) || return 1
+  done
+}
+
+ask_host_app_ip() {
+  local exposure_choice=""
+  local selected_ip=""
+
+  if [[ -n "${HOST_APP_IP}" ]]; then
+    return 0
+  fi
+
+  if [[ ! -t 0 ]]; then
+    HOST_APP_IP="127.0.0.1"
+    return 0
+  fi
+
+  cat <<'PROMPT'
+How should the VM application port be exposed?
+
+1) Only on a specific host IP
+2) On all host IPs, less restrictive
+
+PROMPT
+
+  read -r -p "Select an option [1]: " exposure_choice
+  exposure_choice="${exposure_choice:-1}"
+
+  case "${exposure_choice}" in
+    1)
+      read -r -p "Host IP to expose the application on [127.0.0.1]: " selected_ip
+      selected_ip="${selected_ip:-127.0.0.1}"
+      ;;
+    2)
+      selected_ip="0.0.0.0"
+      ;;
+    *)
+      fail "Invalid host app exposure option: ${exposure_choice}"
+      ;;
+  esac
+
+  is_valid_ipv4 "${selected_ip}" || fail "Invalid IPv4 address for HOST_APP_IP: ${selected_ip}"
+  HOST_APP_IP="${selected_ip}"
+}
+
 save_vagrant_env() {
   mkdir -p "${PROJECT_ROOT}/.deployment"
   cat > "${VAGRANT_ENV_FILE}" <<EOF_ENV
 HOST_DATA_DIR=${HOST_DATA_DIR}
 GUEST_DATA_DIR=${GUEST_DATA_DIR}
+HOST_APP_IP=${HOST_APP_IP}
 HOST_APP_PORT=${HOST_APP_PORT}
 EOF_ENV
   ok "Saved Vagrant host configuration: ${VAGRANT_ENV_FILE}"
 }
 
+get_host_smoke_test_base_url() {
+  if [[ "${HOST_APP_IP}" == "0.0.0.0" ]]; then
+    printf 'http://127.0.0.1:%s\n' "${HOST_APP_PORT}"
+  else
+    printf 'http://%s:%s\n' "${HOST_APP_IP}" "${HOST_APP_PORT}"
+  fi
+}
+
 run_host_smoke_tests() {
   local python_bin=""
-  local base_url="http://127.0.0.1:${HOST_APP_PORT}"
+  local base_url=""
 
   [[ -f "${PROJECT_ROOT}/scripts/smoke_tests.py" ]] || fail "Smoke test script not found: ${PROJECT_ROOT}/scripts/smoke_tests.py"
+
+  base_url="$(get_host_smoke_test_base_url)"
 
   if ! python_bin="$(select_or_prepare_smoke_test_python "${PROJECT_ROOT}")"; then
     warn "Host-side smoke tests skipped."
@@ -140,7 +211,7 @@ run_host_smoke_tests() {
 require_command vagrant
 require_command VBoxManage
 
-if [[ -z "${HOST_DATA_DIR}" ]]; then
+if [[ -z "${HOST_DATA_DIR}" || -z "${HOST_APP_IP}" ]]; then
   load_saved_vagrant_env
 fi
 
@@ -152,12 +223,18 @@ if [[ -z "${HOST_DATA_DIR}" ]]; then
   fi
 fi
 
+ask_host_app_ip
+
 [[ -n "${HOST_DATA_DIR}" ]] || fail "Host data directory cannot be empty."
+[[ -n "${HOST_APP_IP}" ]] || fail "Host app IP cannot be empty."
+is_valid_ipv4 "${HOST_APP_IP}" || fail "Invalid IPv4 address for HOST_APP_IP: ${HOST_APP_IP}"
+
 HOST_DATA_DIR="$(abs_path "${HOST_DATA_DIR}")"
 [[ -d "${HOST_DATA_DIR}" ]] || fail "Host data directory does not exist: ${HOST_DATA_DIR}"
 
 export HOST_DATA_DIR
 export GUEST_DATA_DIR
+export HOST_APP_IP
 export HOST_APP_PORT
 
 save_vagrant_env
@@ -166,12 +243,19 @@ cd "${PROJECT_ROOT}"
 ok "Project root: ${PROJECT_ROOT}"
 ok "Host data directory: ${HOST_DATA_DIR}"
 ok "Guest data directory: ${GUEST_DATA_DIR}"
+ok "Host app IP: ${HOST_APP_IP}"
 ok "Host app port: ${HOST_APP_PORT}"
 
 vagrant up
 
 ok "VirtualBox deployment completed"
-ok "API should be reachable from the host at: http://127.0.0.1:${HOST_APP_PORT}"
+ok "API should be reachable from the host at: $(get_host_smoke_test_base_url)"
+
+if [[ "${HOST_APP_IP}" == "0.0.0.0" ]]; then
+  ok "API should also be reachable from clients through any allowed host IP on port ${HOST_APP_PORT}"
+elif [[ "${HOST_APP_IP}" != "127.0.0.1" ]]; then
+  ok "API should also be reachable from clients at: http://${HOST_APP_IP}:${HOST_APP_PORT}"
+fi
 
 if is_false "${RUN_SMOKE_TESTS}"; then
   ok "Host-side smoke tests skipped because RUN_SMOKE_TESTS=${RUN_SMOKE_TESTS}"
