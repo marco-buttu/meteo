@@ -5,6 +5,7 @@ APP_DIR="${APP_DIR:-/opt/meteo}"
 GUEST_DATA_DIR="${GUEST_DATA_DIR:-/dati}"
 RUN_USER="${METEO_RUN_USER:-vagrant}"
 RUN_GROUP="${METEO_RUN_GROUP:-vagrant}"
+VM_NETWORK_MODE="${VM_NETWORK_MODE:-nat}"
 
 fail() {
   echo "[FAIL] $*" >&2
@@ -30,6 +31,11 @@ bash "${APP_DIR}/scripts/deployment/local/install_system_deps_debian.sh"
 
 ok "Preparing Python application with the native Linux deployment script"
 sudo -u "${RUN_USER}" -H bash "${APP_DIR}/scripts/deployment/local/setup_app.sh"
+
+if [[ "${VM_NETWORK_MODE}" == "static" ]]; then
+  ok "Configuring static VM network"
+  bash "${APP_DIR}/scripts/deployment/virtualbox/configure_static_network.sh"
+fi
 
 ok "Installing and starting systemd services with the native Linux deployment script"
 bash "${APP_DIR}/scripts/deployment/local/install_systemd_services.sh" \

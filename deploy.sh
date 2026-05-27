@@ -22,8 +22,16 @@ Common VirtualBox variables:
                      during deployment and saved in .deployment/vagrant.env.
   GUEST_DATA_DIR     Directory where host data are mounted in the VM. Default: /dati
   HOST_APP_PORT      Host port forwarded to guest port 5000. Default: 5000
-  HOST_APP_IP        Host IP where the forwarded app port is exposed.
+  HOST_APP_IP        Host IP where the forwarded app port is exposed in NAT mode.
                      Default: 127.0.0.1. Use 0.0.0.0 to listen on all host IPs.
+  VM_NETWORK_MODE    VM network mode: nat or static. Default: nat
+  VM_BRIDGE_INTERFACE
+                     Optional host network interface used by Vagrant public_network.
+  VM_STATIC_IP       Static VM IP used when VM_NETWORK_MODE=static.
+                     Default: 192.168.140.45
+  VM_STATIC_NETMASK  Static VM netmask. Default: 255.255.255.0
+  VM_STATIC_GATEWAY  Static VM gateway. Default: 192.168.140.1
+  VM_STATIC_DNS      Static VM DNS server. Default: 192.168.110.11
   RUN_SMOKE_TESTS    Run host-side smoke tests after VM deployment. Default: 1
                      Set to 0 to skip.
 
