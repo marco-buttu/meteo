@@ -43,6 +43,7 @@ import sys
 import time
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, Iterable, List, Tuple
+from urllib.parse import urlparse
 
 import requests
 
@@ -602,9 +603,19 @@ def run_test(case: TestCase, ctx: TestContext) -> Tuple[bool, str]:
 
 def main() -> int:
     ctx = TestContext()
+    parsed_base_url = urlparse(ctx.base_url)
+    target_scheme = parsed_base_url.scheme or "http"
+    target_host = parsed_base_url.hostname or "unknown"
+    target_port = parsed_base_url.port
+    target_port_text = str(target_port) if target_port is not None else "default"
+
+    print(bold("Smoke test target:"))
+    print(f"  BASE_URL={ctx.base_url}")
+    print(f"  SCHEME={target_scheme}")
+    print(f"  HOST={target_host}")
+    print(f"  PORT={target_port_text}")
 
     print(bold("Smoke test configuration:"))
-    print(f"  BASE_URL={ctx.base_url}")
     print(f"  TIMEOUT_SECONDS={ctx.timeout_seconds}")
     print(f"  POLL_INTERVAL={ctx.poll_interval}")
     print(f"  LEGACY_DATE={ctx.legacy_date}")
