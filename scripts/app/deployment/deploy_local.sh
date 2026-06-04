@@ -5,7 +5,7 @@ PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 
 usage() {
   cat <<'USAGE'
-Usage: scripts/deployment/local/deploy_local.sh [options]
+Usage: scripts/app/deployment/deploy_local.sh [options]
 
 Deploy the application on the current Debian/Ubuntu/Linux Mint machine.
 
@@ -46,10 +46,10 @@ cd "${PROJECT_ROOT}"
 ok "Project root: ${PROJECT_ROOT}"
 
 ok "Installing system dependencies"
-sudo bash "${PROJECT_ROOT}/scripts/deployment/local/install_system_deps_debian.sh"
+sudo bash "${PROJECT_ROOT}/scripts/app/deployment/install_system_deps_debian.sh"
 
 ok "Preparing Python application"
-bash "${PROJECT_ROOT}/scripts/deployment/local/setup_app.sh"
+bash "${PROJECT_ROOT}/scripts/app/deployment/setup_app.sh"
 
 SYSTEMD_ARGS=()
 if [[ "${START_SERVICES}" -eq 1 ]]; then
@@ -57,7 +57,7 @@ if [[ "${START_SERVICES}" -eq 1 ]]; then
 fi
 
 ok "Installing systemd services"
-sudo bash "${PROJECT_ROOT}/scripts/deployment/local/install_systemd_services.sh" "${SYSTEMD_ARGS[@]}"
+sudo bash "${PROJECT_ROOT}/scripts/app/deployment/install_systemd_services.sh" "${SYSTEMD_ARGS[@]}"
 
 ok "Local deployment completed"
 if [[ "${START_SERVICES}" -eq 1 ]]; then

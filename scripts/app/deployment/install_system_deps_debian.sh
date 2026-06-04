@@ -3,7 +3,7 @@ set -euo pipefail
 
 usage() {
   cat <<'USAGE'
-Usage: scripts/deployment/local/install_system_deps_debian.sh [--no-redis-enable]
+Usage: scripts/app/deployment/install_system_deps_debian.sh [--no-redis-enable]
 
 Install the system packages required by the native Linux deployment.
 
@@ -13,7 +13,7 @@ Options:
 
 This script is intended for Debian, Ubuntu, Linux Mint, and closely related
 APT-based distributions. It does not install Python application dependencies.
-Use scripts/deployment/local/setup_app.sh for the application setup.
+Use scripts/app/deployment/setup_app.sh for the application setup.
 USAGE
 }
 

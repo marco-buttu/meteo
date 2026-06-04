@@ -23,7 +23,7 @@ SYSTEM_PACKAGES=(
 
 usage() {
   cat <<'USAGE'
-Usage: scripts/deployment/local/uninstall_native_linux.sh [options]
+Usage: scripts/app/deployment/uninstall_native_linux.sh [options]
 
 Remove the native Linux deployment installed for the Meteo application.
 
@@ -37,7 +37,7 @@ Options:
   --keep-venv               Do not remove PROJECT_ROOT/.venv.
   --remove-runtime-data     Remove JOB_STORAGE_DIR and PLOT_STORAGE_DIR from .env.
   --remove-system-deps      Remove only system packages that were not installed
-                            before scripts/deployment/local/install_system_deps_debian.sh ran.
+                            before scripts/app/deployment/install_system_deps_debian.sh ran.
   --purge-system-deps       Purge those system packages instead of removing them.
                             Implies --remove-system-deps.
   --remove-redis-data       Also remove Redis data after package removal.
@@ -49,7 +49,7 @@ Options:
 
 Typical reset for a disposable test VM:
 
-  sudo scripts/deployment/local/uninstall_native_linux.sh --yes --remove-runtime-data --remove-system-deps
+  sudo scripts/app/deployment/uninstall_native_linux.sh --yes --remove-runtime-data --remove-system-deps
 
 If no state file is available, --remove-system-deps will not remove packages.
 Use apt manually if you really want to purge system packages from such a host.

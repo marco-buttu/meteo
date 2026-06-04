@@ -2,7 +2,7 @@
 set -euo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-INSTALLER="${PROJECT_ROOT}/scripts/deployment/host/install_dependencies_debian.sh"
+INSTALLER="${PROJECT_ROOT}/scripts/host/vagrant/install_dependencies_debian.sh"
 HOST_ENV_FILE="${PROJECT_ROOT}/.deployment/host.env"
 REQUIRE_VAGRANT=0
 REQUIRE_VIRTUALBOX=0
@@ -14,7 +14,7 @@ HOST_SMOKE_VENV="${HOST_SMOKE_VENV:-${PROJECT_ROOT}/.deployment/host-smoke-venv}
 
 usage() {
   cat <<'USAGE'
-Usage: scripts/deployment/host/check_dependencies.sh [options]
+Usage: scripts/host/vagrant/check_dependencies.sh [options]
 
 Check host-side dependencies required to orchestrate deployment tasks.
 

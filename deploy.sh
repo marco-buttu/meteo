@@ -2,7 +2,7 @@
 set -euo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-HOST_DEP_CHECK="${PROJECT_ROOT}/scripts/deployment/host/check_dependencies.sh"
+HOST_DEP_CHECK="${PROJECT_ROOT}/scripts/host/vagrant/check_dependencies.sh"
 
 usage() {
   cat <<'USAGE'
@@ -71,16 +71,16 @@ run_target() {
   local target="$1"
   case "${target}" in
     local)
-      bash "${PROJECT_ROOT}/scripts/deployment/local/deploy_local.sh"
+      bash "${PROJECT_ROOT}/scripts/app/deployment/deploy_local.sh"
       ;;
     virtualbox|vm)
-      bash "${PROJECT_ROOT}/scripts/deployment/virtualbox/deploy_virtualbox.sh"
+      bash "${PROJECT_ROOT}/scripts/host/vagrant/deploy_virtualbox.sh"
       ;;
     vm-reinstall|reinstall-vm|reinstall)
-      bash "${PROJECT_ROOT}/scripts/deployment/virtualbox/reinstall_app.sh"
+      bash "${PROJECT_ROOT}/scripts/host/vagrant/reinstall_app.sh"
       ;;
     vm-fresh|fresh-vm|fresh)
-      bash "${PROJECT_ROOT}/scripts/deployment/virtualbox/fresh_deploy.sh"
+      bash "${PROJECT_ROOT}/scripts/host/vagrant/fresh_deploy.sh"
       ;;
     vm-start|start-vm|start)
       ok "Starting existing VirtualBox VM without provisioning"
@@ -91,6 +91,9 @@ run_target() {
       ok "Stopping existing VirtualBox VM"
       run_vagrant halt
       ok "VM stopped"
+      ;;
+    docker)
+      ok "Docker deployment is not implemented yet."
       ;;
     -h|--help|help)
       usage
@@ -132,6 +135,10 @@ VirtualBox / Vagrant
   6) Stop existing VM
      Shut down the VM.
 
+Docker
+------
+  7) Docker deployment
+     Not implemented yet.
 
 Other
 -----
@@ -147,6 +154,7 @@ fi
 
 if [[ $# -eq 1 ]]; then
   run_target "$1"
+  exit 0
 fi
 
 show_menu

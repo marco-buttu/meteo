@@ -9,7 +9,7 @@ The deployment uses:
 - one `systemd` service for the Flask API
 - one `systemd` service for the RQ worker
 - the project `.env` file for runtime configuration
-- the shared `scripts/deployment/local/setup_app.sh` script for Python application setup
+- the shared `scripts/app/deployment/setup_app.sh` script for Python application setup
 
 This procedure is intended for Debian, Ubuntu, Linux Mint, and closely related
 APT-based distributions.
@@ -19,10 +19,10 @@ APT-based distributions.
 ## Files involved
 
 ```text
-scripts/deployment/local/install_system_deps_debian.sh
-scripts/deployment/local/setup_app.sh
-scripts/deployment/local/install_systemd_services.sh
-scripts/deployment/local/uninstall_native_linux.sh
+scripts/app/deployment/install_system_deps_debian.sh
+scripts/app/deployment/setup_app.sh
+scripts/app/deployment/install_systemd_services.sh
+scripts/app/deployment/uninstall_native_linux.sh
 systemd/meteo-app.service
 systemd/meteo-worker.service
 docs/deployment-native-linux.md
@@ -46,7 +46,7 @@ deployment tests can start from a clean state.
 From the project root:
 
 ```bash
-sudo scripts/deployment/local/install_system_deps_debian.sh
+sudo scripts/app/deployment/install_system_deps_debian.sh
 ```
 
 The script installs:
@@ -69,7 +69,7 @@ available.
 To install Redis without enabling or starting it:
 
 ```bash
-sudo scripts/deployment/local/install_system_deps_debian.sh --no-redis-enable
+sudo scripts/app/deployment/install_system_deps_debian.sh --no-redis-enable
 ```
 
 ---
@@ -125,7 +125,7 @@ DATA_DIR=/dati/meteo
 Run the shared application setup script:
 
 ```bash
-scripts/deployment/local/setup_app.sh
+scripts/app/deployment/setup_app.sh
 ```
 
 This creates `.venv`, installs the Python dependencies from `requirements.txt`,
@@ -135,7 +135,7 @@ If the external data directory is not available yet, you can skip external path
 checks temporarily:
 
 ```bash
-scripts/deployment/local/setup_app.sh --skip-external-paths
+scripts/app/deployment/setup_app.sh --skip-external-paths
 ```
 
 Do not use this skip option for the final deployment check.
@@ -147,7 +147,7 @@ Do not use this skip option for the final deployment check.
 Before installing the services, check what will be generated:
 
 ```bash
-sudo scripts/deployment/local/install_systemd_services.sh --dry-run
+sudo scripts/app/deployment/install_systemd_services.sh --dry-run
 ```
 
 The output should contain the real absolute paths for:
@@ -165,7 +165,7 @@ It should also show the Linux user and group that will run the services.
 Run:
 
 ```bash
-sudo scripts/deployment/local/install_systemd_services.sh
+sudo scripts/app/deployment/install_systemd_services.sh
 ```
 
 By default, this installs the services and enables them at boot, but does not
@@ -174,19 +174,19 @@ start them immediately.
 To install and start them immediately:
 
 ```bash
-sudo scripts/deployment/local/install_systemd_services.sh --start
+sudo scripts/app/deployment/install_systemd_services.sh --start
 ```
 
 To install them without enabling them at boot:
 
 ```bash
-sudo scripts/deployment/local/install_systemd_services.sh --no-enable
+sudo scripts/app/deployment/install_systemd_services.sh --no-enable
 ```
 
 To choose a specific runtime user and group:
 
 ```bash
-sudo scripts/deployment/local/install_systemd_services.sh --user meteo --group meteo
+sudo scripts/app/deployment/install_systemd_services.sh --user meteo --group meteo
 ```
 
 ---
@@ -281,14 +281,14 @@ From the project root:
 
 ```bash
 git pull
-scripts/deployment/local/setup_app.sh
+scripts/app/deployment/setup_app.sh
 sudo systemctl restart meteo-app meteo-worker
 ```
 
 If the service templates changed, reinstall them:
 
 ```bash
-sudo scripts/deployment/local/install_systemd_services.sh --start
+sudo scripts/app/deployment/install_systemd_services.sh --start
 ```
 
 ---
@@ -298,14 +298,14 @@ sudo scripts/deployment/local/install_systemd_services.sh --start
 To remove the installed `systemd` services and the local virtual environment:
 
 ```bash
-sudo scripts/deployment/local/uninstall_native_linux.sh --yes
+sudo scripts/app/deployment/uninstall_native_linux.sh --yes
 ```
 
 For a repeated test on a disposable VM, remove also the runtime job and plot
 directories created from `.env`:
 
 ```bash
-sudo scripts/deployment/local/uninstall_native_linux.sh --yes --remove-runtime-data
+sudo scripts/app/deployment/uninstall_native_linux.sh --yes --remove-runtime-data
 ```
 
 To get as close as possible to the initial state of a fresh test VM, also remove
@@ -313,13 +313,13 @@ the system packages that were installed by `install_system_deps_debian.sh` and
 were not already present before that script ran:
 
 ```bash
-sudo scripts/deployment/local/uninstall_native_linux.sh --yes --remove-runtime-data --remove-system-deps
+sudo scripts/app/deployment/uninstall_native_linux.sh --yes --remove-runtime-data --remove-system-deps
 ```
 
 Preview the uninstall without changing the system:
 
 ```bash
-sudo scripts/deployment/local/uninstall_native_linux.sh --dry-run --remove-runtime-data --remove-system-deps
+sudo scripts/app/deployment/uninstall_native_linux.sh --dry-run --remove-runtime-data --remove-system-deps
 ```
 
 The uninstall script removes packages only when a deployment state file exists:
@@ -396,7 +396,7 @@ Check:
 
 ```bash
 grep -E '^(DATA_DIR|ATM_SER_PATH|OCTAVE_BIN)=' .env
-scripts/deployment/common/check_env.sh
+scripts/common/check_env.sh
 ```
 
 Make sure the service user can read `DATA_DIR` and `ATM_SER_PATH`.

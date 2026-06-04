@@ -84,7 +84,7 @@ Vagrant.configure('2') do |config|
   end
 
   config.vm.provision 'shell',
-                      path: 'scripts/deployment/virtualbox/provision_vm.sh',
+                      path: 'scripts/vm/provisioning/provision_vm.sh',
                       env: {
                         'GUEST_DATA_DIR' => GUEST_DATA_DIR,
                         'METEO_RUN_USER' => 'vagrant',

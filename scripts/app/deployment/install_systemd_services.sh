@@ -12,7 +12,7 @@ SYSTEMD_DIR="/etc/systemd/system"
 
 usage() {
   cat <<'USAGE'
-Usage: scripts/deployment/local/install_systemd_services.sh [options]
+Usage: scripts/app/deployment/install_systemd_services.sh [options]
 
 Install the native Linux systemd services for the Meteo application.
 
@@ -26,7 +26,7 @@ Options:
   --dry-run            Print generated units without installing them.
   -h, --help           Show this help message.
 
-The script expects scripts/deployment/local/setup_app.sh to have already created the virtual
+The script expects scripts/app/deployment/setup_app.sh to have already created the virtual
 environment and installed the Python dependencies.
 USAGE
 }
@@ -102,7 +102,7 @@ validate() {
   [[ -f "${PROJECT_ROOT}/run.py" ]] || fail "run.py not found in project root: ${PROJECT_ROOT}"
   [[ -f "${PROJECT_ROOT}/worker.py" ]] || fail "worker.py not found in project root: ${PROJECT_ROOT}"
   [[ -f "${ENV_FILE}" ]] || fail "Environment file not found: ${ENV_FILE}"
-  [[ -x "${PROJECT_ROOT}/.venv/bin/python" ]] || fail "Virtualenv Python not found: ${PROJECT_ROOT}/.venv/bin/python. Run scripts/deployment/local/setup_app.sh first."
+  [[ -x "${PROJECT_ROOT}/.venv/bin/python" ]] || fail "Virtualenv Python not found: ${PROJECT_ROOT}/.venv/bin/python. Run scripts/app/deployment/setup_app.sh first."
   [[ -f "${PROJECT_ROOT}/systemd/meteo-app.service" ]] || fail "Missing systemd template: systemd/meteo-app.service"
   [[ -f "${PROJECT_ROOT}/systemd/meteo-worker.service" ]] || fail "Missing systemd template: systemd/meteo-worker.service"
   id "${RUN_USER}" >/dev/null 2>&1 || fail "User does not exist: ${RUN_USER}"

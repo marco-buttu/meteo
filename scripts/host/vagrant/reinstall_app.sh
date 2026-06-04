@@ -7,14 +7,14 @@ HOST_APP_PORT="${HOST_APP_PORT:-}"
 HOST_SMOKE_VENV="${HOST_SMOKE_VENV:-${PROJECT_ROOT}/.deployment/host-smoke-venv}"
 SMOKE_TEST_PYTHON="${SMOKE_TEST_PYTHON:-}"
 VAGRANT_ENV_FILE="${PROJECT_ROOT}/.deployment/vagrant.env"
-SMOKE_PYTHON_HELPER="${PROJECT_ROOT}/scripts/deployment/host/smoke_test_python.sh"
+SMOKE_PYTHON_HELPER="${PROJECT_ROOT}/scripts/host/vagrant/smoke_test_python.sh"
 
 # shellcheck disable=SC1090
 source "${SMOKE_PYTHON_HELPER}"
 
 usage() {
   cat <<'USAGE'
-Usage: scripts/deployment/virtualbox/reinstall_app.sh [options]
+Usage: scripts/host/vagrant/reinstall_app.sh [options]
 
 Reinstall the application inside an existing VirtualBox/Vagrant VM.
 The VM is kept. Ubuntu, Redis, system packages, Vagrant mounts and port
