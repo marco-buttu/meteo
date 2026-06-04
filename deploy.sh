@@ -134,11 +134,11 @@ Meteo deployment manager
 
 Host provisioning
 -----------------
-  0) Provision host for shared VM management
+  p) Provision host for shared VM management
      Create/configure the technical Vagrant user, shared permissions and
      optional VM autostart service. Must be run with sudo.
 
-  8) Remove host provisioning
+  u) Unprovisioning host (clean host provisioning)
      Disable/remove the host VM autostart service and local Vagrant user
      configuration. Optionally remove the technical user. Must be run with sudo.
 
@@ -188,7 +188,8 @@ show_menu
 read -r -p "Select an option: " selection
 
 case "${selection}" in
-  0) run_target host-provision ;;
+  p|P) run_target host-provision ;;
+  u|U) run_target host-unprovision ;;
   1) run_target local ;;
   2) run_target virtualbox ;;
   3) run_target vm-reinstall ;;
@@ -196,7 +197,6 @@ case "${selection}" in
   5) run_target vm-start ;;
   6) run_target vm-stop ;;
   7) run_target docker ;;
-  8) run_target host-unprovision ;;
   q|Q) exit 0 ;;
   *) fail "Invalid selection: ${selection}" ;;
 esac
