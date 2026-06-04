@@ -2306,3 +2306,92 @@ The log level is configured with:
 ```env
 LOG_LEVEL=INFO
 ```
+
+## Shared host provisioning for VirtualBox/Vagrant
+
+When the VirtualBox deployment is used on a shared Linux host, the VM should be
+owned and managed by a single technical user. Do not create the VM as one human
+user and later manage it as another user or as `root`: VirtualBox/Vagrant binds
+VM state to the Linux user that created it.
+
+The recommended setup is:
+
+```text
+human users:       mbuttu, fbuffa
+technical VM user: meteo-vm
+shared group:      sviluppo
+shared directory:  /wff
+```
+
+Run the host provisioning once from the project root:
+
+```bash
+sudo ./deploy.sh host-provision
+```
+
+To remove host provisioning artifacts later, use:
+
+```bash
+sudo ./deploy.sh host-unprovision
+```
+
+The provisioning asks for the shared directory, using `/wff` as the default. It
+creates the technical user if needed, adds it to `vboxusers` and the shared
+group, configures project permissions, saves the Vagrant run user in:
+
+```text
+.deployment/host-vagrant-user.env
+```
+
+with content similar to:
+
+```env
+VAGRANT_RUN_USER=meteo-vm
+```
+
+It can also install and enable a host-side systemd service that starts the VM at
+host boot:
+
+```text
+meteo-vm.service
+```
+
+Normal deployment and VM management should still be run without sudo:
+
+```bash
+./deploy.sh virtualbox
+./deploy.sh vm-start
+./deploy.sh vm-stop
+./deploy.sh vm-reinstall
+./deploy.sh vm-fresh
+```
+
+The host-side Vagrant scripts read `VAGRANT_RUN_USER` and execute Vagrant as the
+technical user. This avoids UID mismatch errors when different human users work
+on the same project checkout.
+
+Do not run raw Vagrant commands directly as `mbuttu`, `fbuffa` or `root` for this
+shared VM. Use `deploy.sh` or the scripts under:
+
+```text
+scripts/host/vagrant/
+```
+
+Host unprovisioning removes the host-side autostart systemd service and the
+local Vagrant run-user configuration file:
+
+```text
+.deployment/host-vagrant-user.env
+```
+
+By default it keeps the technical user `meteo-vm`. To remove that user as well,
+run:
+
+```bash
+sudo ./deploy.sh host-unprovision --remove-user
+```
+
+Removing the technical user is destructive because it can remove the user's home
+directory, including VirtualBox/Vagrant state owned by that user. Project tree
+permissions changed during host provisioning are not reverted automatically.
+

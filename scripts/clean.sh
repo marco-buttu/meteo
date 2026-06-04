@@ -82,12 +82,29 @@ cleanup_vagrant() {
     if [[ "$DRY_RUN" -eq 1 ]]; then
         echo "[dry-run] HOST_DATA_DIR=${HOST_DATA_DIR:-/tmp} vagrant destroy -f"
     else
-        HOST_DATA_DIR="${HOST_DATA_DIR:-/tmp}" vagrant destroy -f || true
+        if [[ -x "./scripts/host/vagrant/run_vagrant_command.sh" ]]; then
+            HOST_DATA_DIR="${HOST_DATA_DIR:-/tmp}" ./scripts/host/vagrant/run_vagrant_command.sh destroy -f || true
+        else
+            HOST_DATA_DIR="${HOST_DATA_DIR:-/tmp}" vagrant destroy -f || true
+        fi
     fi
 
     if [[ -d ".vagrant" ]]; then
         echo "Removing: ./.vagrant"
-        run_command rm -rf .vagrant
+        if [[ "$DRY_RUN" -eq 1 ]]; then
+            echo "[dry-run] rm -rf .vagrant"
+        elif [[ -x "./scripts/host/vagrant/vagrant_user.sh" ]]; then
+            # shellcheck disable=SC1091
+            PROJECT_ROOT="$(pwd)" source ./scripts/host/vagrant/vagrant_user.sh
+            load_vagrant_run_user
+            if vagrant_run_user_is_configured && [[ "$(id -un)" != "${VAGRANT_RUN_USER}" ]]; then
+                sudo -H -u "${VAGRANT_RUN_USER}" rm -rf .vagrant
+            else
+                rm -rf .vagrant
+            fi
+        else
+            run_command rm -rf .vagrant
+        fi
     else
         echo "No .vagrant directory to remove."
     fi

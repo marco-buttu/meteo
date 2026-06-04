@@ -8,6 +8,7 @@ HOST_SMOKE_VENV="${HOST_SMOKE_VENV:-${PROJECT_ROOT}/.deployment/host-smoke-venv}
 SMOKE_TEST_PYTHON="${SMOKE_TEST_PYTHON:-}"
 VAGRANT_ENV_FILE="${PROJECT_ROOT}/.deployment/vagrant.env"
 SMOKE_PYTHON_HELPER="${PROJECT_ROOT}/scripts/host/vagrant/smoke_test_python.sh"
+VAGRANT_RUNNER="${PROJECT_ROOT}/scripts/host/vagrant/run_vagrant_command.sh"
 
 # shellcheck disable=SC1090
 source "${SMOKE_PYTHON_HELPER}"
@@ -105,16 +106,16 @@ run_host_smoke_tests() {
 
 [[ -f "${PROJECT_ROOT}/Vagrantfile" ]] || fail "Vagrantfile not found in project root: ${PROJECT_ROOT}"
 [[ -f "${SMOKE_PYTHON_HELPER}" ]] || fail "Smoke-test Python helper not found: ${SMOKE_PYTHON_HELPER}"
-require_command vagrant
+[[ -x "${VAGRANT_RUNNER}" ]] || fail "Vagrant runner script not found or not executable: ${VAGRANT_RUNNER}"
 load_saved_vagrant_env
 
 cd "${PROJECT_ROOT}"
 
 ok "Ensuring the VM is running without provisioning"
-vagrant up --no-provision
+bash "${VAGRANT_RUNNER}" up --no-provision
 
 ok "Removing the existing application installation inside the VM"
-vagrant ssh -c 'set -euo pipefail
+bash "${VAGRANT_RUNNER}" ssh -c 'set -euo pipefail
 sudo systemctl stop meteo-app meteo-worker 2>/dev/null || true
 sudo systemctl disable meteo-app meteo-worker 2>/dev/null || true
 sudo rm -f /etc/systemd/system/meteo-app.service /etc/systemd/system/meteo-worker.service
@@ -123,7 +124,7 @@ sudo rm -rf /opt/meteo
 '
 
 ok "Reprovisioning the application inside the existing VM"
-vagrant provision
+bash "${VAGRANT_RUNNER}" provision
 
 ok "Application reinstall inside the existing VM completed"
 ok "API should be reachable from the host at: http://127.0.0.1:${HOST_APP_PORT}"
