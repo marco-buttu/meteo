@@ -93,6 +93,30 @@
       align-items: end;
     }
 
+    .mode-row {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin: 16px 0 8px;
+    }
+
+    .mode-row label {
+      display: inline-flex;
+      gap: 6px;
+      align-items: center;
+      margin-bottom: 0;
+      font-weight: 600;
+    }
+
+    .mode-row input {
+      width: auto;
+    }
+
+    .hidden {
+      display: none;
+    }
+
     .help {
       margin-top: 6px;
       color: #566573;
@@ -173,7 +197,22 @@
     <h2>Available data</h2>
     <p class="description">Filter the data directory and choose the file to use for the legacy command.</p>
 
-    <div class="filter-grid">
+    <div class="field">
+      <label>Data filter mode</label>
+      <div class="mode-row" role="radiogroup" aria-label="Data filter mode">
+        <label>
+          <input id="data-mode-single" type="radio" name="data-filter-mode" value="single" checked>
+          Single date
+        </label>
+        <label>
+          <input id="data-mode-period" type="radio" name="data-filter-mode" value="period">
+          Period
+        </label>
+      </div>
+      <p class="help">Choose a single day or a timestamp interval.</p>
+    </div>
+
+    <div id="single-date-fields" class="filter-grid">
       <div class="field">
         <label for="data-year">Year</label>
         <input id="data-year" type="number" min="0" step="1">
@@ -187,7 +226,29 @@
         <input id="data-day" type="number" min="1" max="31" step="1">
       </div>
       <div class="field">
-        <button id="load-data-button" type="button">Load data</button>
+        <button id="load-data-button-single" type="button">Load data</button>
+      </div>
+    </div>
+
+    <div id="period-fields" class="filter-grid hidden">
+      <div class="field">
+        <label for="data-from-date">From date</label>
+        <input id="data-from-date" type="date">
+      </div>
+      <div class="field">
+        <label for="data-from-hour">From hour</label>
+        <input id="data-from-hour" type="number" min="0" max="23" step="1">
+      </div>
+      <div class="field">
+        <label for="data-to-date">To date</label>
+        <input id="data-to-date" type="date">
+      </div>
+      <div class="field">
+        <label for="data-to-hour">To hour</label>
+        <input id="data-to-hour" type="number" min="0" max="23" step="1">
+      </div>
+      <div class="field">
+        <button id="load-data-button-period" type="button">Load data</button>
       </div>
     </div>
 
@@ -196,6 +257,12 @@
       <select id="data-file-select"></select>
       <p id="data-help" class="help">Select a file. The timestamp is taken from the filename automatically.</p>
     </div>
+
+    <details id="data-request-details">
+      <summary>Data request details</summary>
+      <p class="help">Request payload used to load the available data files.</p>
+      <pre id="data-request-output">No data request submitted yet.</pre>
+    </details>
   </section>
 
   <section class="panel">
@@ -246,12 +313,23 @@
   const jobOutput = document.getElementById("job-output");
   const requestOutput = document.getElementById("request-output");
   const requestDetails = document.getElementById("request-details");
+  const dataRequestOutput = document.getElementById("data-request-output");
+  const dataRequestDetails = document.getElementById("data-request-details");
+  const dataModeSingle = document.getElementById("data-mode-single");
+  const dataModePeriod = document.getElementById("data-mode-period");
+  const singleDateFields = document.getElementById("single-date-fields");
+  const periodFields = document.getElementById("period-fields");
   const dataYear = document.getElementById("data-year");
   const dataMonth = document.getElementById("data-month");
   const dataDay = document.getElementById("data-day");
+  const dataFromDate = document.getElementById("data-from-date");
+  const dataFromHour = document.getElementById("data-from-hour");
+  const dataToDate = document.getElementById("data-to-date");
+  const dataToHour = document.getElementById("data-to-hour");
   const dataFileSelect = document.getElementById("data-file-select");
   const dataHelp = document.getElementById("data-help");
-  const loadDataButton = document.getElementById("load-data-button");
+  const loadDataButtonSingle = document.getElementById("load-data-button-single");
+  const loadDataButtonPeriod = document.getElementById("load-data-button-period");
 
   let commands = [];
   let activeCommand = null;
@@ -268,6 +346,10 @@
 
   function showRequest(value) {
     requestOutput.textContent = JSON.stringify(value, null, 2);
+  }
+
+  function showDataRequest(value) {
+    dataRequestOutput.textContent = JSON.stringify(value, null, 2);
   }
 
   function visibleParameters() {
@@ -296,13 +378,63 @@
 
   function setTodayFilters() {
     const today = new Date();
-    dataYear.value = String(today.getFullYear());
-    dataMonth.value = String(today.getMonth() + 1).padStart(2, "0");
-    dataDay.value = String(today.getDate()).padStart(2, "0");
+    const yyyy = String(today.getFullYear());
+    const mm = String(today.getMonth() + 1).padStart(2, "0");
+    const dd = String(today.getDate()).padStart(2, "0");
+    const isoDate = `${yyyy}-${mm}-${dd}`;
+
+    dataYear.value = yyyy;
+    dataMonth.value = mm;
+    dataDay.value = dd;
+    dataFromDate.value = isoDate;
+    dataFromHour.value = "00";
+    dataToDate.value = isoDate;
+    dataToHour.value = "23";
+  }
+
+  function updateDataFilterMode() {
+    const isPeriod = dataModePeriod.checked;
+    singleDateFields.classList.toggle("hidden", isPeriod);
+    periodFields.classList.toggle("hidden", !isPeriod);
+  }
+
+  function hourToString(value, label) {
+    const trimmed = String(value || "").trim();
+    if (trimmed === "") {
+      throw new Error(`${label} is required.`);
+    }
+    const parsed = Number(trimmed);
+    if (!Number.isInteger(parsed) || parsed < 0 || parsed > 23) {
+      throw new Error(`${label} must be an integer from 0 to 23.`);
+    }
+    return String(parsed).padStart(2, "0");
+  }
+
+  function timestampFromDateAndHour(dateValue, hourValue, label) {
+    if (!dateValue) {
+      throw new Error(`${label} date is required.`);
+    }
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateValue);
+    if (!match) {
+      throw new Error(`${label} date must use YYYY-MM-DD format.`);
+    }
+    return `${match[1]}${match[2]}${match[3]}${hourToString(hourValue, `${label} hour`)}`;
   }
 
   function dataRequestParameters() {
     const parameters = {};
+
+    if (dataModePeriod.checked) {
+      const fromTimestamp = timestampFromDateAndHour(dataFromDate.value, dataFromHour.value, "From");
+      const toTimestamp = timestampFromDateAndHour(dataToDate.value, dataToHour.value, "To");
+      if (fromTimestamp > toTimestamp) {
+        throw new Error("From timestamp must be less than or equal to To timestamp.");
+      }
+      parameters.from = fromTimestamp;
+      parameters.to = toTimestamp;
+      return parameters;
+    }
+
     if (dataYear.value.trim()) {
       parameters.year = Number(dataYear.value.trim());
     }
@@ -364,7 +496,8 @@
   }
 
   async function loadDataFiles() {
-    loadDataButton.disabled = true;
+    loadDataButtonSingle.disabled = true;
+    loadDataButtonPeriod.disabled = true;
     dataHelp.textContent = "Loading available data files...";
     dataHelp.className = "help";
     selectedDataTimestamp = "";
@@ -376,7 +509,7 @@
       jobIdNode.textContent = "-";
       jobStatusNode.textContent = "submitting data request";
       jobStatusNode.className = "";
-      showRequest(requestPayload);
+      showDataRequest(requestPayload);
 
       const metadata = await createOperationJob(requestPayload.operation, requestPayload.parameters);
       jobIdNode.textContent = metadata.job_id;
@@ -389,7 +522,7 @@
         option.value = "";
         option.textContent = "No data files found for the selected filters";
         dataFileSelect.appendChild(option);
-        dataHelp.textContent = "No matching data files were found. Change year, month or day and load again.";
+        dataHelp.textContent = "No matching data files were found. Change the selected filters and load again.";
         dataHelp.className = "help warning";
         return;
       }
@@ -413,7 +546,8 @@
       dataHelp.textContent = error instanceof Error ? error.message : String(error);
       dataHelp.className = "help error";
     } finally {
-      loadDataButton.disabled = false;
+      loadDataButtonSingle.disabled = false;
+      loadDataButtonPeriod.disabled = false;
       updateRunButtonState();
     }
   }
@@ -582,10 +716,14 @@
     dataHelp.className = "help";
     updateRunButtonState();
   });
-  loadDataButton.addEventListener("click", loadDataFiles);
+  loadDataButtonSingle.addEventListener("click", loadDataFiles);
+  loadDataButtonPeriod.addEventListener("click", loadDataFiles);
+  dataModeSingle.addEventListener("change", updateDataFilterMode);
+  dataModePeriod.addEventListener("change", updateDataFilterMode);
   commandForm.addEventListener("submit", submitCommand);
 
   setTodayFilters();
+  updateDataFilterMode();
   Promise.all([loadCommands(), loadDataFiles()]).catch((error) => {
     jobStatusNode.textContent = "initialization failed";
     jobStatusNode.className = "error";
