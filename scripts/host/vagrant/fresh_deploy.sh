@@ -5,6 +5,8 @@ PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 ASSUME_YES="${ASSUME_YES:-0}"
 HOST_DEP_CHECK="${PROJECT_ROOT}/scripts/host/vagrant/check_dependencies.sh"
 VAGRANT_ENV_FILE="${PROJECT_ROOT}/.deployment/vagrant.env"
+VAGRANT_RUNNER="${PROJECT_ROOT}/scripts/host/vagrant/run_vagrant_command.sh"
+VAGRANT_USER_HELPER="${PROJECT_ROOT}/scripts/host/vagrant/vagrant_user.sh"
 VM_NETWORK_MODE="${VM_NETWORK_MODE:-}"
 
 usage() {
@@ -62,6 +64,22 @@ fail() {
 
 ok() {
   echo "[OK] $*"
+}
+
+# shellcheck disable=SC1090
+source "${VAGRANT_USER_HELPER}"
+
+remove_vagrant_state_dir() {
+  [[ -d "${PROJECT_ROOT}/.vagrant" ]] || return 0
+
+  load_vagrant_run_user
+  if vagrant_run_user_is_configured && [[ "$(id -un)" != "${VAGRANT_RUN_USER}" ]]; then
+    ok "Removing local Vagrant state directory as ${VAGRANT_RUN_USER}"
+    sudo -H -u "${VAGRANT_RUN_USER}" rm -rf "${PROJECT_ROOT}/.vagrant"
+  else
+    ok "Removing local Vagrant state directory"
+    rm -rf "${PROJECT_ROOT}/.vagrant"
+  fi
 }
 
 read_saved_value() {
@@ -232,6 +250,7 @@ EOF_PROMPT
 
 [[ -f "${PROJECT_ROOT}/Vagrantfile" ]] || fail "Vagrantfile not found in project root: ${PROJECT_ROOT}"
 [[ -x "${HOST_DEP_CHECK}" ]] || fail "Host dependency check script not found or not executable: ${HOST_DEP_CHECK}"
+[[ -x "${VAGRANT_RUNNER}" ]] || fail "Vagrant runner script not found or not executable: ${VAGRANT_RUNNER}"
 
 bash "${HOST_DEP_CHECK}" --virtualbox --no-smoke-tests
 confirm
@@ -239,10 +258,9 @@ confirm
 cd "${PROJECT_ROOT}"
 
 ok "Destroying existing Vagrant VM, if any"
-vagrant destroy -f || true
+bash "${VAGRANT_RUNNER}" destroy -f || true
 
-ok "Removing local Vagrant state directory"
-rm -rf "${PROJECT_ROOT}/.vagrant"
+remove_vagrant_state_dir
 
 ask_vm_network_mode
 handle_saved_vagrant_env

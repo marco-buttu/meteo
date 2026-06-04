@@ -430,3 +430,42 @@ LOG_LEVEL=INFO
 These settings limit request size, legacy command length and the maximum number
 of files returned by the asynchronous `data` operation. They also control the
 application log level.
+
+## Shared VirtualBox host provisioning
+
+For a shared host where multiple Linux users need to manage the same
+VirtualBox/Vagrant VM, first provision the host:
+
+```bash
+sudo ./deploy.sh host-provision
+```
+
+This creates/configures the technical Vagrant user `meteo-vm`, checks the shared
+project directory, saves the run user in `.deployment/host-vagrant-user.env`, and
+optionally installs the host systemd autostart service `meteo-vm.service`.
+
+The shared directory prompt defaults to:
+
+```text
+/wff
+```
+
+After this step, run normal VM operations without sudo through `deploy.sh`:
+
+```bash
+./deploy.sh vm-start
+./deploy.sh vm-stop
+./deploy.sh virtualbox
+```
+
+To remove host provisioning artifacts, run:
+
+```bash
+sudo ./deploy.sh host-unprovision
+```
+
+This disables and removes the host-side `meteo-vm.service` autostart service and
+removes `.deployment/host-vagrant-user.env`. The technical user `meteo-vm` is kept
+by default; remove it only when you no longer need the VM state owned by that
+user. Project tree permissions are not reverted automatically.
+

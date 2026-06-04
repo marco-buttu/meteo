@@ -3,12 +3,17 @@ set -euo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HOST_DEP_CHECK="${PROJECT_ROOT}/scripts/host/vagrant/check_dependencies.sh"
+VAGRANT_RUNNER="${PROJECT_ROOT}/scripts/host/vagrant/run_vagrant_command.sh"
+HOST_PROVISIONER="${PROJECT_ROOT}/scripts/host/provisioning/provision_host.sh"
+HOST_UNPROVISIONER="${PROJECT_ROOT}/scripts/host/provisioning/unprovision_host.sh"
 
 usage() {
   cat <<'USAGE'
 Usage: ./deploy.sh [target]
 
 Targets:
+  host-provision     Prepare the host for shared VM management. Must be run with sudo.
+  host-unprovision   Remove host provisioning artifacts. Must be run with sudo.
   local              Deploy on the current Debian/Ubuntu/Linux Mint machine.
   virtualbox|vm      Create or provision a VirtualBox VM through Vagrant.
   vm-reinstall       Reinstall the app inside the existing VirtualBox VM.
@@ -36,6 +41,8 @@ Common VirtualBox variables:
                      Set to 0 to skip.
 
 Examples:
+  sudo ./deploy.sh host-provision
+  sudo ./deploy.sh host-unprovision
   ./deploy.sh local
   ./deploy.sh virtualbox
   ./deploy.sh vm-reinstall
@@ -62,37 +69,52 @@ require_vagrant_project() {
 run_vagrant() {
   require_vagrant_project
   [[ -x "${HOST_DEP_CHECK}" ]] || fail "Host dependency check script not found or not executable: ${HOST_DEP_CHECK}"
+  [[ -x "${VAGRANT_RUNNER}" ]] || fail "Vagrant runner script not found or not executable: ${VAGRANT_RUNNER}"
   bash "${HOST_DEP_CHECK}" --virtualbox --no-smoke-tests
-  cd "${PROJECT_ROOT}"
-  vagrant "$@"
+  bash "${VAGRANT_RUNNER}" "$@"
 }
 
 run_target() {
   local target="$1"
+  shift || true
+
   case "${target}" in
+    host-provision|provision-host)
+      bash "${HOST_PROVISIONER}" "$@"
+      ;;
+    host-unprovision|unprovision-host|host-clean)
+      bash "${HOST_UNPROVISIONER}" "$@"
+      ;;
     local)
+      [[ $# -eq 0 ]] || fail "Target ${target} does not accept extra arguments"
       bash "${PROJECT_ROOT}/scripts/app/deployment/deploy_local.sh"
       ;;
     virtualbox|vm)
+      [[ $# -eq 0 ]] || fail "Target ${target} does not accept extra arguments"
       bash "${PROJECT_ROOT}/scripts/host/vagrant/deploy_virtualbox.sh"
       ;;
     vm-reinstall|reinstall-vm|reinstall)
+      [[ $# -eq 0 ]] || fail "Target ${target} does not accept extra arguments"
       bash "${PROJECT_ROOT}/scripts/host/vagrant/reinstall_app.sh"
       ;;
     vm-fresh|fresh-vm|fresh)
+      [[ $# -eq 0 ]] || fail "Target ${target} does not accept extra arguments"
       bash "${PROJECT_ROOT}/scripts/host/vagrant/fresh_deploy.sh"
       ;;
     vm-start|start-vm|start)
+      [[ $# -eq 0 ]] || fail "Target ${target} does not accept extra arguments"
       ok "Starting existing VirtualBox VM without provisioning"
       run_vagrant up --no-provision
       ok "VM started"
       ;;
     vm-stop|stop-vm|stop)
+      [[ $# -eq 0 ]] || fail "Target ${target} does not accept extra arguments"
       ok "Stopping existing VirtualBox VM"
       run_vagrant halt
       ok "VM stopped"
       ;;
     docker)
+      [[ $# -eq 0 ]] || fail "Target ${target} does not accept extra arguments"
       ok "Docker deployment is not implemented yet."
       ;;
     -h|--help|help)
@@ -109,6 +131,16 @@ show_menu() {
   cat <<'MENU'
 Meteo deployment manager
 ========================
+
+Host provisioning
+-----------------
+  p) Provision host for shared VM management
+     Create/configure the technical Vagrant user, shared permissions and
+     optional VM autostart service. Must be run with sudo.
+
+  u) Unprovisioning host (clean host provisioning)
+     Disable/remove the host VM autostart service and local Vagrant user
+     configuration. Optionally remove the technical user. Must be run with sudo.
 
 Local machine
 -------------
@@ -147,13 +179,8 @@ Other
 MENU
 }
 
-if [[ $# -gt 1 ]]; then
-  usage >&2
-  exit 2
-fi
-
-if [[ $# -eq 1 ]]; then
-  run_target "$1"
+if [[ $# -ge 1 ]]; then
+  run_target "$@"
   exit 0
 fi
 
@@ -161,6 +188,8 @@ show_menu
 read -r -p "Select an option: " selection
 
 case "${selection}" in
+  p|P) run_target host-provision ;;
+  u|U) run_target host-unprovision ;;
   1) run_target local ;;
   2) run_target virtualbox ;;
   3) run_target vm-reinstall ;;

@@ -17,6 +17,7 @@ HOST_SMOKE_VENV="${HOST_SMOKE_VENV:-${PROJECT_ROOT}/.deployment/host-smoke-venv}
 SMOKE_TEST_PYTHON="${SMOKE_TEST_PYTHON:-}"
 VAGRANT_ENV_FILE="${PROJECT_ROOT}/.deployment/vagrant.env"
 SMOKE_PYTHON_HELPER="${PROJECT_ROOT}/scripts/host/vagrant/smoke_test_python.sh"
+VAGRANT_RUNNER="${PROJECT_ROOT}/scripts/host/vagrant/run_vagrant_command.sh"
 
 # shellcheck disable=SC1090
 source "${SMOKE_PYTHON_HELPER}"
@@ -355,7 +356,7 @@ run_host_smoke_tests() {
 }
 
 [[ -f "${SMOKE_PYTHON_HELPER}" ]] || fail "Smoke-test Python helper not found: ${SMOKE_PYTHON_HELPER}"
-require_command vagrant
+[[ -x "${VAGRANT_RUNNER}" ]] || fail "Vagrant runner script not found or not executable: ${VAGRANT_RUNNER}"
 require_command VBoxManage
 
 if [[ -z "${HOST_DATA_DIR}" || -z "${VM_NETWORK_MODE}" ]]; then
@@ -414,7 +415,7 @@ else
   ok "Host app port: ${HOST_APP_PORT}"
 fi
 
-vagrant up
+bash "${VAGRANT_RUNNER}" up
 
 ok "VirtualBox deployment completed"
 ok "API should be reachable for smoke tests at: $(get_host_smoke_test_base_url)"
