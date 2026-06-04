@@ -10,7 +10,7 @@ SKIP_EXTERNAL_PATHS=0
 
 usage() {
   cat <<'USAGE'
-Usage: scripts/deployment/local/setup_app.sh [options]
+Usage: scripts/app/deployment/setup_app.sh [options]
 
 Prepare the application after system dependencies are already available.
 
@@ -109,7 +109,7 @@ if [[ "$SKIP_ENV_CHECK" -eq 0 ]]; then
   if [[ "$SKIP_EXTERNAL_PATHS" -eq 1 ]]; then
     CHECK_ARGS+=(--skip-external-paths)
   fi
-  ENV_FILE="$ENV_FILE" bash "${PROJECT_ROOT}/scripts/deployment/common/check_env.sh" "${CHECK_ARGS[@]}"
+  ENV_FILE="$ENV_FILE" bash "${PROJECT_ROOT}/scripts/common/check_env.sh" "${CHECK_ARGS[@]}"
 else
   ok "Environment validation skipped"
 fi

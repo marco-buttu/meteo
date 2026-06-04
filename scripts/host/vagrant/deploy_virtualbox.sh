@@ -16,14 +16,14 @@ RUN_SMOKE_TESTS="${RUN_SMOKE_TESTS:-1}"
 HOST_SMOKE_VENV="${HOST_SMOKE_VENV:-${PROJECT_ROOT}/.deployment/host-smoke-venv}"
 SMOKE_TEST_PYTHON="${SMOKE_TEST_PYTHON:-}"
 VAGRANT_ENV_FILE="${PROJECT_ROOT}/.deployment/vagrant.env"
-SMOKE_PYTHON_HELPER="${PROJECT_ROOT}/scripts/deployment/host/smoke_test_python.sh"
+SMOKE_PYTHON_HELPER="${PROJECT_ROOT}/scripts/host/vagrant/smoke_test_python.sh"
 
 # shellcheck disable=SC1090
 source "${SMOKE_PYTHON_HELPER}"
 
 usage() {
   cat <<'USAGE'
-Usage: scripts/deployment/virtualbox/deploy_virtualbox.sh [options]
+Usage: scripts/host/vagrant/deploy_virtualbox.sh [options]
 
 Create and provision a VirtualBox VM through Vagrant.
 

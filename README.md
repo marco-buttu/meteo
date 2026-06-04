@@ -141,7 +141,7 @@ octave-cli --version
 The repository includes a shared application setup script:
 
 ```bash
-scripts/deployment/local/setup_app.sh
+scripts/app/deployment/setup_app.sh
 ```
 
 The script prepares the Python environment, installs the packages listed in
@@ -243,15 +243,15 @@ Direct mode:
 This runs the local deployment orchestrator:
 
 ```bash
-scripts/deployment/local/deploy_local.sh
+scripts/app/deployment/deploy_local.sh
 ```
 
 The orchestrator calls the existing native deployment scripts in this order:
 
 ```text
-scripts/deployment/local/install_system_deps_debian.sh
-scripts/deployment/local/setup_app.sh
-scripts/deployment/local/install_systemd_services.sh --start
+scripts/app/deployment/install_system_deps_debian.sh
+scripts/app/deployment/setup_app.sh
+scripts/app/deployment/install_systemd_services.sh --start
 ```
 
 The local deployment:
@@ -278,19 +278,19 @@ FLASK_HOST=0.0.0.0
 To install the services without starting them immediately:
 
 ```bash
-scripts/deployment/local/deploy_local.sh --no-start
+scripts/app/deployment/deploy_local.sh --no-start
 ```
 
 To preview the generated services:
 
 ```bash
-sudo scripts/deployment/local/install_systemd_services.sh --dry-run
+sudo scripts/app/deployment/install_systemd_services.sh --dry-run
 ```
 
 To uninstall a local test deployment:
 
 ```bash
-sudo scripts/deployment/local/uninstall_native_linux.sh --yes --remove-runtime-data --remove-system-deps
+sudo scripts/app/deployment/uninstall_native_linux.sh --yes --remove-runtime-data --remove-system-deps
 ```
 
 Read the full native deployment guide here:
@@ -460,7 +460,7 @@ Direct mode:
 This target runs:
 
 ```bash
-scripts/deployment/virtualbox/reinstall_app.sh
+scripts/host/vagrant/reinstall_app.sh
 ```
 
 It stops and removes the existing `meteo-app` and `meteo-worker` units inside the
@@ -500,13 +500,13 @@ Direct mode:
 The underlying script is:
 
 ```bash
-scripts/deployment/virtualbox/fresh_deploy.sh
+scripts/host/vagrant/fresh_deploy.sh
 ```
 
 It asks for confirmation before destroying the VM. To skip the confirmation:
 
 ```bash
-scripts/deployment/virtualbox/fresh_deploy.sh --yes
+scripts/host/vagrant/fresh_deploy.sh --yes
 ```
 
 ### Start and stop the existing VM
@@ -2017,14 +2017,14 @@ FLASK_DEBUG
 Use this command to validate the environment without reinstalling dependencies:
 
 ```bash
-scripts/deployment/common/check_env.sh
+scripts/common/check_env.sh
 ```
 
 For image builds or other situations where external volumes are not mounted yet,
 you can skip checks for external paths:
 
 ```bash
-scripts/deployment/common/check_env.sh --skip-external-paths
+scripts/common/check_env.sh --skip-external-paths
 ```
 
 ---

@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 ENV_FILE="${ENV_FILE:-${PROJECT_ROOT}/.env}"
 SKIP_EXTERNAL_PATHS=0
 
 usage() {
   cat <<'USAGE'
-Usage: scripts/deployment/common/check_env.sh [--skip-external-paths]
+Usage: scripts/common/check_env.sh [--skip-external-paths]
 
 Validate the application environment file and the paths required by the app.
 

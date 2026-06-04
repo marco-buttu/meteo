@@ -13,7 +13,7 @@ SYSTEMD_DIR="/etc/systemd/system"
 
 usage() {
   cat <<'USAGE'
-Usage: scripts/deployment/local/reinstall_app.sh [options]
+Usage: scripts/app/deployment/reinstall_app.sh [options]
 
 Reinstall the Meteo application on the current Linux machine without removing
 system packages or Redis data. This script is intended to be reusable both on a
@@ -35,8 +35,8 @@ Options:
   -h, --help                Show this help message.
 
 Examples:
-  sudo scripts/deployment/local/reinstall_app.sh --yes
-  sudo scripts/deployment/local/reinstall_app.sh --yes --user vagrant --group vagrant
+  sudo scripts/app/deployment/reinstall_app.sh --yes
+  sudo scripts/app/deployment/reinstall_app.sh --yes --user vagrant --group vagrant
 USAGE
 }
 
@@ -237,7 +237,7 @@ remove_runtime_data() {
 
 run_setup() {
   ok "Preparing Python application as ${RUN_USER}"
-  run sudo -u "${RUN_USER}" -H env ENV_FILE="${ENV_FILE}" bash "${PROJECT_ROOT}/scripts/deployment/local/setup_app.sh"
+  run sudo -u "${RUN_USER}" -H env ENV_FILE="${ENV_FILE}" bash "${PROJECT_ROOT}/scripts/app/deployment/setup_app.sh"
 }
 
 install_services() {
@@ -253,14 +253,14 @@ install_services() {
   fi
 
   ok "Installing systemd services"
-  run bash "${PROJECT_ROOT}/scripts/deployment/local/install_systemd_services.sh" "${args[@]}"
+  run bash "${PROJECT_ROOT}/scripts/app/deployment/install_systemd_services.sh" "${args[@]}"
 }
 
 require_root
 require_yes
 [[ -d "${PROJECT_ROOT}" ]] || fail "Project root does not exist: ${PROJECT_ROOT}"
-[[ -f "${PROJECT_ROOT}/scripts/deployment/local/setup_app.sh" ]] || fail "setup_app.sh not found under project root"
-[[ -f "${PROJECT_ROOT}/scripts/deployment/local/install_systemd_services.sh" ]] || fail "install_systemd_services.sh not found under project root"
+[[ -f "${PROJECT_ROOT}/scripts/app/deployment/setup_app.sh" ]] || fail "setup_app.sh not found under project root"
+[[ -f "${PROJECT_ROOT}/scripts/app/deployment/install_systemd_services.sh" ]] || fail "install_systemd_services.sh not found under project root"
 resolve_run_identity
 load_env_if_available
 

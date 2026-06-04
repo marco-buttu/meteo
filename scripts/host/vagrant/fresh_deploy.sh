@@ -3,13 +3,13 @@ set -euo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 ASSUME_YES="${ASSUME_YES:-0}"
-HOST_DEP_CHECK="${PROJECT_ROOT}/scripts/deployment/host/check_dependencies.sh"
+HOST_DEP_CHECK="${PROJECT_ROOT}/scripts/host/vagrant/check_dependencies.sh"
 VAGRANT_ENV_FILE="${PROJECT_ROOT}/.deployment/vagrant.env"
 VM_NETWORK_MODE="${VM_NETWORK_MODE:-}"
 
 usage() {
   cat <<'USAGE'
-Usage: scripts/deployment/virtualbox/fresh_deploy.sh [options]
+Usage: scripts/host/vagrant/fresh_deploy.sh [options]
 
 Destroy the existing Vagrant VM for this project, remove the local .vagrant
 state directory, and run a new VirtualBox deployment from scratch.
@@ -248,4 +248,4 @@ ask_vm_network_mode
 handle_saved_vagrant_env
 
 ok "Running fresh VirtualBox deployment"
-VM_NETWORK_MODE="${VM_NETWORK_MODE}" bash "${PROJECT_ROOT}/scripts/deployment/virtualbox/deploy_virtualbox.sh"
+VM_NETWORK_MODE="${VM_NETWORK_MODE}" bash "${PROJECT_ROOT}/scripts/host/vagrant/deploy_virtualbox.sh"

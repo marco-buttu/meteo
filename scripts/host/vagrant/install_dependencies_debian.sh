@@ -3,7 +3,7 @@ set -euo pipefail
 
 usage() {
   cat <<'USAGE'
-Usage: scripts/deployment/host/install_dependencies_debian.sh [packages...]
+Usage: scripts/host/vagrant/install_dependencies_debian.sh [packages...]
 
 Install host-side dependencies required to orchestrate VirtualBox/Vagrant
 deployments on Debian/Ubuntu/Linux Mint systems.
