@@ -26,59 +26,60 @@ OPERATION_CATALOG: OperationCatalog = {
             "limit": "integer",
         },
     },
-    "get_precipitable_water_vapor": {
-        "description": "Estimate precipitable water vapor for a given site and time.",
+    "iwv": {
+        "description": "Execute the native Python implementation of the IWV command.",
         "produces_result": True,
         "produces_plot": False,
         "required_parameters": {
-            "timestamp": "datetime_iso8601",
-            "site_lat": "float",
-            "site_lon": "float",
+            "date": "string",
+            "hour": "integer",
         },
-        "optional_parameters": {
-            "site_alt_m": "float",
-        },
+        "optional_parameters": {},
     },
-    "get_wind_profile": {
-        "description": "Return wind speed profile as a function of altitude.",
-        "produces_result": True,
-        "produces_plot": True,
-        "required_parameters": {
-            "timestamp": "datetime_iso8601",
-            "site_lat": "float",
-            "site_lon": "float",
-            "max_altitude_m": "float",
-        },
-        "optional_parameters": {
-            "step_m": "float",
-        },
-    },
-    "get_system_temperature_estimate": {
-        "description": "Estimate system temperature for a given observing setup.",
+    "meteo": {
+        "description": "Execute the native Python implementation of the meteo command.",
         "produces_result": True,
         "produces_plot": False,
         "required_parameters": {
-            "frequency_ghz": "float",
-            "elevation_deg": "float",
-            "pwv_mm": "float",
+            "date": "string",
+            "hour": "integer",
         },
-        "optional_parameters": {
-            "receiver_band": "string",
-        },
+        "optional_parameters": {},
     },
-    "plot_opacity_timeseries": {
-        "description": "Generate an opacity time series plot for a time interval.",
+    "opacity": {
+        "description": "Execute the native Python implementation of the opacity command.",
         "produces_result": True,
-        "produces_plot": True,
+        "produces_plot": False,
         "required_parameters": {
-            "start_time": "datetime_iso8601",
-            "end_time": "datetime_iso8601",
-            "site_lat": "float",
-            "site_lon": "float",
+            "date": "string",
+            "hour": "integer",
+            "freq": "float",
         },
-        "optional_parameters": {
-            "frequency_ghz": "float",
+        "optional_parameters": {},
+    },
+    "rain": {
+        "description": "Execute the native Python implementation of the rain command.",
+        "produces_result": True,
+        "produces_plot": False,
+        "required_parameters": {
+            "date": "string",
+            "hour": "integer",
         },
+        "optional_parameters": {},
+    },
+    "tsys": {
+        "description": "Execute the native Python implementation of the tsys command.",
+        "produces_result": True,
+        "produces_plot": False,
+        "required_parameters": {
+            "date": "string",
+            "hour": "integer",
+            "freq": "float",
+            "theta": "float",
+            "eta": "float",
+            "trec": "float",
+        },
+        "optional_parameters": {},
     },
     "legacy_iwv": {
         "description": "Execute the legacy 'iwv' command through the legacy backend.",

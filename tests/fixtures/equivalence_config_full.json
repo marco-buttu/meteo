@@ -1,0 +1,837 @@
+{
+  "base_url": "http://127.0.0.1:5000",
+  "poll_timeout_seconds": 60,
+  "poll_interval_seconds": 0.5,
+  "http_timeout_seconds": 10,
+  "abs_tol": 1e-06,
+  "rel_tol": 1e-06,
+  "iwv": {
+    "valid_cases": [
+      {
+        "name": "full_series",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 0
+        }
+      },
+      {
+        "name": "first_epoch",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 1
+        }
+      },
+      {
+        "name": "middle_epoch",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 36
+        }
+      },
+      {
+        "name": "last_epoch",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 73
+        }
+      }
+    ],
+    "all_valid_epochs_for_dates": [
+      "A2026011600"
+    ],
+    "async_failure_cases": [
+      {
+        "name": "unsupported_db_prefix",
+        "parameters": {
+          "date": "Z2026011600",
+          "hour": 1
+        }
+      },
+      {
+        "name": "missing_file",
+        "parameters": {
+          "date": "A2099010100",
+          "hour": 1
+        },
+        "expected_message_contains": [
+          "file",
+          "not",
+          "found"
+        ]
+      },
+      {
+        "name": "epoch_out_of_range",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 9999
+        }
+      }
+    ],
+    "request_validation_cases": [
+      {
+        "name": "invalid_date_format",
+        "parameters": {
+          "date": "2026011600",
+          "hour": 1
+        }
+      },
+      {
+        "name": "invalid_hour_type",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": "x"
+        }
+      },
+      {
+        "name": "missing_date",
+        "parameters": {
+          "hour": 1
+        }
+      },
+      {
+        "name": "missing_hour",
+        "parameters": {
+          "date": "A2026011600"
+        }
+      },
+      {
+        "name": "negative_hour",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": -1
+        }
+      },
+      {
+        "name": "unknown_parameter",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 1,
+          "unexpected": true
+        }
+      }
+    ]
+  },
+  "meteo": {
+    "valid_cases": [
+      {
+        "name": "full_series",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 0
+        }
+      },
+      {
+        "name": "first_epoch",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 1
+        }
+      },
+      {
+        "name": "middle_epoch",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 36
+        }
+      },
+      {
+        "name": "last_epoch",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 73
+        }
+      }
+    ],
+    "all_valid_epochs_for_dates": [
+      "A2026011600"
+    ],
+    "async_failure_cases": [
+      {
+        "name": "unsupported_db_prefix",
+        "parameters": {
+          "date": "Z2026011600",
+          "hour": 1
+        }
+      },
+      {
+        "name": "missing_file",
+        "parameters": {
+          "date": "A2099010100",
+          "hour": 1
+        },
+        "expected_message_contains": [
+          "file",
+          "not",
+          "found"
+        ]
+      },
+      {
+        "name": "epoch_out_of_range",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 9999
+        }
+      }
+    ],
+    "request_validation_cases": [
+      {
+        "name": "invalid_date_format",
+        "parameters": {
+          "date": "2026011600",
+          "hour": 1
+        }
+      },
+      {
+        "name": "invalid_hour_type",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": "x"
+        }
+      },
+      {
+        "name": "missing_date",
+        "parameters": {
+          "hour": 1
+        }
+      },
+      {
+        "name": "missing_hour",
+        "parameters": {
+          "date": "A2026011600"
+        }
+      },
+      {
+        "name": "negative_hour",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": -1
+        }
+      },
+      {
+        "name": "unknown_parameter",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 1,
+          "unexpected": true
+        }
+      }
+    ]
+  },
+  "opacity": {
+    "valid_cases": [
+      {
+        "name": "full_series_86ghz",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 0,
+          "freq": 86.3
+        }
+      },
+      {
+        "name": "first_epoch_86ghz",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 1,
+          "freq": 86.3
+        }
+      },
+      {
+        "name": "middle_epoch_22ghz",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 36,
+          "freq": 22.23515
+        }
+      },
+      {
+        "name": "last_epoch_100ghz",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 73,
+          "freq": 100.0
+        }
+      }
+    ],
+    "all_valid_epochs_for_cases": [
+      {
+        "date": "A2026011600",
+        "freq": 86.3
+      },
+      {
+        "date": "A2026011600",
+        "freq": 22.23515
+      }
+    ],
+    "async_failure_cases": [
+      {
+        "name": "unsupported_db_prefix",
+        "parameters": {
+          "date": "Z2026011600",
+          "hour": 1,
+          "freq": 86.3
+        }
+      },
+      {
+        "name": "missing_file",
+        "parameters": {
+          "date": "A2099010100",
+          "hour": 1,
+          "freq": 86.3
+        },
+        "expected_message_contains": [
+          "file",
+          "not",
+          "found"
+        ]
+      },
+      {
+        "name": "epoch_out_of_range",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 9999,
+          "freq": 86.3
+        }
+      }
+    ],
+    "request_validation_cases": [
+      {
+        "name": "invalid_date_format",
+        "parameters": {
+          "date": "2026011600",
+          "hour": 1,
+          "freq": 86.3
+        }
+      },
+      {
+        "name": "invalid_hour_type",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": "x",
+          "freq": 86.3
+        }
+      },
+      {
+        "name": "invalid_freq_type",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 1,
+          "freq": "x"
+        }
+      },
+      {
+        "name": "missing_date",
+        "parameters": {
+          "hour": 1,
+          "freq": 86.3
+        }
+      },
+      {
+        "name": "missing_hour",
+        "parameters": {
+          "date": "A2026011600",
+          "freq": 86.3
+        }
+      },
+      {
+        "name": "missing_freq",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 1
+        }
+      },
+      {
+        "name": "non_positive_freq",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 1,
+          "freq": 0.0
+        }
+      },
+      {
+        "name": "negative_hour",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": -1,
+          "freq": 86.3
+        }
+      },
+      {
+        "name": "unknown_parameter",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 1,
+          "freq": 86.3,
+          "unexpected": true
+        }
+      },
+      {
+        "name": "too_large_freq",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 1,
+          "freq": 1001.0
+        }
+      }
+    ]
+  },
+  "rain": {
+    "valid_cases": [
+      {
+        "name": "full_series",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 0
+        }
+      },
+      {
+        "name": "first_epoch",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 1
+        }
+      },
+      {
+        "name": "middle_epoch",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 36
+        }
+      },
+      {
+        "name": "last_epoch",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 73
+        }
+      }
+    ],
+    "all_valid_epochs_for_dates": [
+      "A2026011600"
+    ],
+    "async_failure_cases": [
+      {
+        "name": "unsupported_db_prefix",
+        "parameters": {
+          "date": "Z2026011600",
+          "hour": 1
+        }
+      },
+      {
+        "name": "missing_file",
+        "parameters": {
+          "date": "A2099010100",
+          "hour": 1
+        },
+        "expected_message_contains": [
+          "file",
+          "not",
+          "found"
+        ]
+      },
+      {
+        "name": "epoch_out_of_range",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 9999
+        }
+      }
+    ],
+    "request_validation_cases": [
+      {
+        "name": "invalid_date_format",
+        "parameters": {
+          "date": "2026011600",
+          "hour": 1
+        }
+      },
+      {
+        "name": "invalid_hour_type",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": "x"
+        }
+      },
+      {
+        "name": "missing_date",
+        "parameters": {
+          "hour": 1
+        }
+      },
+      {
+        "name": "missing_hour",
+        "parameters": {
+          "date": "A2026011600"
+        }
+      },
+      {
+        "name": "negative_hour",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": -1
+        }
+      },
+      {
+        "name": "unknown_parameter",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 1,
+          "unexpected": true
+        }
+      }
+    ]
+  },
+  "tsys": {
+    "valid_cases": [
+      {
+        "name": "full_series_default",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 0,
+          "freq": 86.3,
+          "theta": 45.0,
+          "eta": 0.95,
+          "trec": 50.0
+        }
+      },
+      {
+        "name": "first_epoch_default",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 1,
+          "freq": 86.3,
+          "theta": 45.0,
+          "eta": 0.95,
+          "trec": 50.0
+        }
+      },
+      {
+        "name": "middle_epoch_low_theta_clamp",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 36,
+          "freq": 22.23515,
+          "theta": 3.0,
+          "eta": 0.85,
+          "trec": 35.0
+        }
+      },
+      {
+        "name": "last_epoch_high_freq",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 73,
+          "freq": 100.0,
+          "theta": 80.0,
+          "eta": 0.7,
+          "trec": 80.0
+        }
+      },
+      {
+        "name": "first_epoch_eta_zero",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 1,
+          "freq": 43.0,
+          "theta": 20.0,
+          "eta": 0.0,
+          "trec": 15.0
+        }
+      },
+      {
+        "name": "first_epoch_eta_one",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 1,
+          "freq": 43.0,
+          "theta": 90.0,
+          "eta": 1.0,
+          "trec": 15.0
+        }
+      }
+    ],
+    "all_valid_epochs_for_cases": [
+      {
+        "date": "A2026011600",
+        "freq": 86.3,
+        "theta": 45.0,
+        "eta": 0.95,
+        "trec": 50.0
+      },
+      {
+        "date": "A2026011600",
+        "freq": 22.23515,
+        "theta": 6.0,
+        "eta": 0.85,
+        "trec": 35.0
+      }
+    ],
+    "async_failure_cases": [
+      {
+        "name": "unsupported_db_prefix",
+        "parameters": {
+          "date": "Z2026011600",
+          "hour": 1,
+          "freq": 86.3,
+          "theta": 45.0,
+          "eta": 0.95,
+          "trec": 50.0
+        }
+      },
+      {
+        "name": "missing_file",
+        "parameters": {
+          "date": "A2099010100",
+          "hour": 1,
+          "freq": 86.3,
+          "theta": 45.0,
+          "eta": 0.95,
+          "trec": 50.0
+        },
+        "expected_message_contains": [
+          "file",
+          "not",
+          "found"
+        ]
+      },
+      {
+        "name": "epoch_out_of_range",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 9999,
+          "freq": 86.3,
+          "theta": 45.0,
+          "eta": 0.95,
+          "trec": 50.0
+        }
+      }
+    ],
+    "request_validation_cases": [
+      {
+        "name": "invalid_date_format",
+        "parameters": {
+          "date": "2026011600",
+          "hour": 1,
+          "freq": 86.3,
+          "theta": 45.0,
+          "eta": 0.95,
+          "trec": 50.0
+        }
+      },
+      {
+        "name": "invalid_hour_type",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": "x",
+          "freq": 86.3,
+          "theta": 45.0,
+          "eta": 0.95,
+          "trec": 50.0
+        }
+      },
+      {
+        "name": "invalid_freq_type",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 1,
+          "freq": "x",
+          "theta": 45.0,
+          "eta": 0.95,
+          "trec": 50.0
+        }
+      },
+      {
+        "name": "invalid_theta_type",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 1,
+          "freq": 86.3,
+          "theta": "x",
+          "eta": 0.95,
+          "trec": 50.0
+        }
+      },
+      {
+        "name": "invalid_eta_type",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 1,
+          "freq": 86.3,
+          "theta": 45.0,
+          "eta": "x",
+          "trec": 50.0
+        }
+      },
+      {
+        "name": "invalid_trec_type",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 1,
+          "freq": 86.3,
+          "theta": 45.0,
+          "eta": 0.95,
+          "trec": "x"
+        }
+      },
+      {
+        "name": "missing_date",
+        "parameters": {
+          "hour": 1,
+          "freq": 86.3,
+          "theta": 45.0,
+          "eta": 0.95,
+          "trec": 50.0
+        }
+      },
+      {
+        "name": "missing_hour",
+        "parameters": {
+          "date": "A2026011600",
+          "freq": 86.3,
+          "theta": 45.0,
+          "eta": 0.95,
+          "trec": 50.0
+        }
+      },
+      {
+        "name": "missing_freq",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 1,
+          "theta": 45.0,
+          "eta": 0.95,
+          "trec": 50.0
+        }
+      },
+      {
+        "name": "missing_theta",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 1,
+          "freq": 86.3,
+          "eta": 0.95,
+          "trec": 50.0
+        }
+      },
+      {
+        "name": "missing_eta",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 1,
+          "freq": 86.3,
+          "theta": 45.0,
+          "trec": 50.0
+        }
+      },
+      {
+        "name": "missing_trec",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 1,
+          "freq": 86.3,
+          "theta": 45.0,
+          "eta": 0.95
+        }
+      },
+      {
+        "name": "negative_hour",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": -1,
+          "freq": 86.3,
+          "theta": 45.0,
+          "eta": 0.95,
+          "trec": 50.0
+        }
+      },
+      {
+        "name": "non_positive_freq",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 1,
+          "freq": 0.0,
+          "theta": 45.0,
+          "eta": 0.95,
+          "trec": 50.0
+        }
+      },
+      {
+        "name": "negative_theta",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 1,
+          "freq": 86.3,
+          "theta": -1.0,
+          "eta": 0.95,
+          "trec": 50.0
+        }
+      },
+      {
+        "name": "theta_too_high",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 1,
+          "freq": 86.3,
+          "theta": 91.0,
+          "eta": 0.95,
+          "trec": 50.0
+        }
+      },
+      {
+        "name": "eta_too_low",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 1,
+          "freq": 86.3,
+          "theta": 45.0,
+          "eta": -0.1,
+          "trec": 50.0
+        }
+      },
+      {
+        "name": "eta_too_high",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 1,
+          "freq": 86.3,
+          "theta": 45.0,
+          "eta": 1.1,
+          "trec": 50.0
+        }
+      },
+      {
+        "name": "negative_trec",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 1,
+          "freq": 86.3,
+          "theta": 45.0,
+          "eta": 0.95,
+          "trec": -1.0
+        }
+      },
+      {
+        "name": "unknown_parameter",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 1,
+          "freq": 86.3,
+          "theta": 45.0,
+          "eta": 0.95,
+          "trec": 50.0,
+          "unexpected": true
+        }
+      },
+      {
+        "name": "too_large_freq",
+        "parameters": {
+          "date": "A2026011600",
+          "hour": 1,
+          "freq": 1001.0,
+          "theta": 45.0,
+          "eta": 0.95,
+          "trec": 50.0
+        }
+      }
+    ]
+  }
+}

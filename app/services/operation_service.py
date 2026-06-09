@@ -104,7 +104,7 @@ def _apply_parameter_constraints(
 
         return parameters
 
-    if operation_name.startswith("legacy_"):
+    if operation_name in {"iwv", "meteo", "opacity", "rain", "tsys"} or operation_name.startswith("legacy_"):
         if "date" in parameters:
             _validate_legacy_date(parameters["date"])
         if "hour" in parameters:

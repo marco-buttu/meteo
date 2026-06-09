@@ -22,8 +22,8 @@ _LEGACY_JSON_FIELDS = {"command"}
 def register_routes(app: Flask) -> None:
 
     @app.route("/ui", methods=["GET"])
-    def legacy_ui():
-        return render_template("legacy_ui.html")
+    def ui():
+        return render_template("ui.html")
 
     @app.route("/legacy/commands", methods=["GET"])
     def get_legacy_commands():
