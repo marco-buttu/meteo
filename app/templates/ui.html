@@ -191,11 +191,11 @@
 <body>
 <main>
   <h1>Meteo Command UI</h1>
-  <p class="subtitle">Choose a data file and a legacy command, submit the job, and inspect status and result.</p>
+  <p class="subtitle">Choose a data file, select a command implementation, submit the job, and inspect status and result.</p>
 
   <section class="panel">
     <h2>Available data</h2>
-    <p class="description">Filter the data directory and choose the file to use for the legacy command.</p>
+    <p class="description">Filter the data directory and choose the file to use for the selected command.</p>
 
     <div class="field">
       <label>Data filter mode</label>
@@ -272,6 +272,16 @@
       <p id="command-description" class="description"></p>
     </div>
 
+    <div class="field">
+      <label for="implementation-select">Implementation</label>
+      <select id="implementation-select">
+        <option value="python" selected>Python</option>
+        <option value="legacy">Legacy Octave</option>
+        <option value="both">Both</option>
+      </select>
+      <p class="help">Python is the native implementation. Legacy Octave is available for comparison and backward compatibility. Both submits both implementations and shows separate payloads, statuses and results.</p>
+    </div>
+
     <form id="command-form">
       <div id="parameter-fields"></div>
       <button id="run-button" type="submit">Run command</button>
@@ -279,37 +289,34 @@
   </section>
 
   <section class="panel">
-    <h2>Job status</h2>
-    <dl class="status-grid">
-      <dt>Job ID</dt>
-      <dd id="job-id">-</dd>
-      <dt>Status</dt>
-      <dd id="job-status">-</dd>
-    </dl>
+    <h2>Command job status</h2>
+    <div id="job-status-container">
+      <p class="help">No command job submitted yet.</p>
+    </div>
   </section>
 
   <section class="panel">
     <h2>Technical details</h2>
     <details id="request-details">
-      <summary>Request payload</summary>
-      <pre id="request-output">No request submitted yet.</pre>
+      <summary>Command request payloads</summary>
+      <pre id="request-output">No command request submitted yet.</pre>
     </details>
   </section>
 
   <section class="panel">
-    <h2>Result or error</h2>
-    <pre id="job-output">No job submitted yet.</pre>
+    <h2>Command result or error</h2>
+    <pre id="job-output">No command job submitted yet.</pre>
   </section>
 </main>
 
 <script>
   const commandSelect = document.getElementById("command-select");
   const commandDescription = document.getElementById("command-description");
+  const implementationSelect = document.getElementById("implementation-select");
   const commandForm = document.getElementById("command-form");
   const parameterFields = document.getElementById("parameter-fields");
   const runButton = document.getElementById("run-button");
-  const jobIdNode = document.getElementById("job-id");
-  const jobStatusNode = document.getElementById("job-status");
+  const jobStatusContainer = document.getElementById("job-status-container");
   const jobOutput = document.getElementById("job-output");
   const requestOutput = document.getElementById("request-output");
   const requestDetails = document.getElementById("request-details");
@@ -333,7 +340,7 @@
 
   let commands = [];
   let activeCommand = null;
-  let pollTimer = null;
+  let pollTimers = new Map();
   let selectedDataTimestamp = "";
 
   function showOutput(value) {
@@ -364,12 +371,88 @@
     return field ? field.value.trim() : "";
   }
 
-  function buildLegacyCommand() {
+  function parseParameterValue(parameter) {
+    const rawValue = getFieldValue(parameter);
+    if (parameter.type === "integer") {
+      const parsed = Number(rawValue);
+      if (!Number.isInteger(parsed)) {
+        throw new Error(`${parameter.label} must be an integer.`);
+      }
+      return parsed;
+    }
+    if (parameter.type === "number") {
+      const parsed = Number(rawValue);
+      if (!Number.isFinite(parsed)) {
+        throw new Error(`${parameter.label} must be a number.`);
+      }
+      return parsed;
+    }
+    return rawValue;
+  }
+
+  function operationNameForImplementation(implementation) {
     if (!activeCommand) {
       return "";
     }
-    const values = [selectedDataTimestamp, ...visibleParameters().map((parameter) => getFieldValue(parameter))];
-    return [activeCommand.name, ...values].join(",");
+    if (implementation === "legacy") {
+      return `legacy_${activeCommand.name}`;
+    }
+    return activeCommand.name;
+  }
+
+  function buildOperationPayload(implementation) {
+    if (!activeCommand) {
+      throw new Error("No command selected.");
+    }
+
+    const parameters = {
+      date: `A${selectedDataTimestamp}`,
+    };
+
+    visibleParameters().forEach((parameter) => {
+      parameters[parameter.name] = parseParameterValue(parameter);
+    });
+
+    return {
+      operation: operationNameForImplementation(implementation),
+      parameters,
+    };
+  }
+
+  function buildCommandRequests() {
+    if (implementationSelect.value === "both") {
+      return [
+        {
+          key: "python",
+          label: "Python",
+          payload: buildOperationPayload("python"),
+        },
+        {
+          key: "legacy",
+          label: "Legacy Octave",
+          payload: buildOperationPayload("legacy"),
+        },
+      ];
+    }
+
+    const implementation = implementationSelect.value;
+    return [
+      {
+        key: implementation,
+        label: implementation === "legacy" ? "Legacy Octave" : "Python",
+        payload: buildOperationPayload(implementation),
+      },
+    ];
+  }
+
+  function requestPayloadForDisplay(requests) {
+    if (requests.length === 1) {
+      return requests[0].payload;
+    }
+
+    return Object.fromEntries(
+      requests.map((request) => [request.key, request.payload])
+    );
   }
 
   function updateRunButtonState() {
@@ -466,7 +549,7 @@
     return payload;
   }
 
-  async function waitForJobResult(jobId) {
+  async function waitForJobResult(jobId, onStatus) {
     while (true) {
       const metadataResponse = await fetch(`/jobs/${jobId}`);
       const metadata = await metadataResponse.json();
@@ -475,8 +558,9 @@
         throw new Error(metadata.message || `Unable to read job status: HTTP ${metadataResponse.status}`);
       }
 
-      jobStatusNode.textContent = metadata.status || "unknown";
-      jobStatusNode.className = metadata.status === "finished" ? "ok" : metadata.status === "failed" ? "error" : "";
+      if (onStatus) {
+        onStatus(metadata);
+      }
 
       if (metadata.status === "finished") {
         const resultResponse = await fetch(`/jobs/${jobId}/result`);
@@ -495,6 +579,51 @@
     }
   }
 
+  function clearPollTimers() {
+    pollTimers.forEach((timer) => clearInterval(timer));
+    pollTimers.clear();
+  }
+
+  function statusClass(status) {
+    return status === "finished" ? "ok" : status === "failed" ? "error" : "";
+  }
+
+  function renderCommandStatusCards(entries) {
+    jobStatusContainer.innerHTML = "";
+
+    entries.forEach((entry) => {
+      const wrapper = document.createElement("div");
+      wrapper.className = "field";
+
+      const title = document.createElement("h3");
+      title.textContent = `${entry.label} job status`;
+      wrapper.appendChild(title);
+
+      const dl = document.createElement("dl");
+      dl.className = "status-grid";
+
+      const jobIdLabel = document.createElement("dt");
+      jobIdLabel.textContent = "Job ID";
+      dl.appendChild(jobIdLabel);
+
+      const jobIdValue = document.createElement("dd");
+      jobIdValue.textContent = entry.job_id || "-";
+      dl.appendChild(jobIdValue);
+
+      const statusLabel = document.createElement("dt");
+      statusLabel.textContent = "Status";
+      dl.appendChild(statusLabel);
+
+      const statusValue = document.createElement("dd");
+      statusValue.textContent = entry.status || "-";
+      statusValue.className = statusClass(entry.status);
+      dl.appendChild(statusValue);
+
+      wrapper.appendChild(dl);
+      jobStatusContainer.appendChild(wrapper);
+    });
+  }
+
   async function loadDataFiles() {
     loadDataButtonSingle.disabled = true;
     loadDataButtonPeriod.disabled = true;
@@ -506,16 +635,17 @@
 
     try {
       const requestPayload = { operation: "data", parameters: dataRequestParameters() };
-      jobIdNode.textContent = "-";
-      jobStatusNode.textContent = "submitting data request";
-      jobStatusNode.className = "";
       showDataRequest(requestPayload);
 
       const metadata = await createOperationJob(requestPayload.operation, requestPayload.parameters);
-      jobIdNode.textContent = metadata.job_id;
-      jobStatusNode.textContent = metadata.status || "queued";
+      dataHelp.textContent = `Data request ${metadata.job_id}: ${metadata.status || "queued"}`;
+      dataHelp.className = "help";
 
-      const payload = await waitForJobResult(metadata.job_id);
+      const payload = await waitForJobResult(metadata.job_id, (jobMetadata) => {
+        dataHelp.textContent = `Data request ${jobMetadata.job_id}: ${jobMetadata.status || "unknown"}`;
+        dataHelp.className = jobMetadata.status === "failed" ? "help error" : "help";
+      });
+
       const files = payload.files || [];
       if (files.length === 0) {
         const option = document.createElement("option");
@@ -624,12 +754,95 @@
     }
   }
 
+  function resultForOutput(entry) {
+    if (entry.error) {
+      return {
+        job_id: entry.job_id || null,
+        status: entry.status || "failed",
+        error: entry.error,
+      };
+    }
+
+    return {
+      job_id: entry.job_id || null,
+      status: entry.status || "finished",
+      result: entry.result,
+    };
+  }
+
+  async function submitSingleCommand(request) {
+    const entry = {
+      key: request.key,
+      label: request.label,
+      job_id: null,
+      status: "submitting",
+      result: null,
+      error: null,
+    };
+
+    renderCommandStatusCards([entry]);
+
+    try {
+      const submitted = await createOperationJob(request.payload.operation, request.payload.parameters);
+      entry.job_id = submitted.job_id;
+      entry.status = submitted.status || "queued";
+      renderCommandStatusCards([entry]);
+
+      entry.result = await waitForJobResult(entry.job_id, (metadata) => {
+        entry.status = metadata.status || "unknown";
+        renderCommandStatusCards([entry]);
+      });
+      entry.status = "finished";
+    } catch (error) {
+      entry.status = "failed";
+      entry.error = error instanceof Error ? error.message : String(error);
+    }
+
+    renderCommandStatusCards([entry]);
+    return entry;
+  }
+
+  async function submitBothCommands(requests) {
+    const entries = requests.map((request) => ({
+      key: request.key,
+      label: request.label,
+      job_id: null,
+      status: "submitting",
+      result: null,
+      error: null,
+      payload: request.payload,
+    }));
+
+    renderCommandStatusCards(entries);
+
+    async function runEntry(entry) {
+      try {
+        const submitted = await createOperationJob(entry.payload.operation, entry.payload.parameters);
+        entry.job_id = submitted.job_id;
+        entry.status = submitted.status || "queued";
+        renderCommandStatusCards(entries);
+
+        entry.result = await waitForJobResult(entry.job_id, (metadata) => {
+          entry.status = metadata.status || "unknown";
+          renderCommandStatusCards(entries);
+        });
+        entry.status = "finished";
+      } catch (error) {
+        entry.status = "failed";
+        entry.error = error instanceof Error ? error.message : String(error);
+      }
+      renderCommandStatusCards(entries);
+      return entry;
+    }
+
+    return Promise.all(entries.map((entry) => runEntry(entry)));
+  }
+
   async function submitCommand(event) {
     event.preventDefault();
 
     if (!selectedDataTimestamp) {
-      jobStatusNode.textContent = "missing data file";
-      jobStatusNode.className = "error";
+      renderCommandStatusCards([{ label: "Command", status: "missing data file" }]);
       showOutput("Select a data file before running a command.");
       return;
     }
@@ -638,74 +851,36 @@
       return;
     }
 
-    const command = buildLegacyCommand();
-    const requestPayload = { command };
+    let requests;
+    try {
+      requests = buildCommandRequests();
+    } catch (error) {
+      renderCommandStatusCards([{ label: "Command", status: "invalid request" }]);
+      showOutput(error instanceof Error ? error.message : String(error));
+      return;
+    }
+
     runButton.disabled = true;
-    jobIdNode.textContent = "-";
-    jobStatusNode.textContent = "submitting";
-    jobStatusNode.className = "";
-    showRequest(requestPayload);
+    clearPollTimers();
+    showRequest(requestPayloadForDisplay(requests));
     showOutput("Waiting for response...");
 
     try {
-      const response = await fetch("/legacy/command", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(requestPayload),
-      });
-      const payload = await response.json();
+      const results = requests.length === 1
+        ? [await submitSingleCommand(requests[0])]
+        : await submitBothCommands(requests);
 
-      if (!response.ok) {
-        jobStatusNode.textContent = "request failed";
-        jobStatusNode.className = "error";
-        showOutput(payload);
-        return;
+      if (requests.length === 1) {
+        showOutput(resultForOutput(results[0]));
+      } else {
+        showOutput(Object.fromEntries(
+          results.map((entry) => [entry.key, resultForOutput(entry)])
+        ));
       }
-
-      jobIdNode.textContent = payload.job_id;
-      jobStatusNode.textContent = payload.status;
-      showOutput(payload);
-      pollJob(payload.job_id);
-    } catch (error) {
-      jobStatusNode.textContent = "request failed";
-      jobStatusNode.className = "error";
-      showOutput(String(error));
     } finally {
       runButton.disabled = false;
       updateRunButtonState();
     }
-  }
-
-  function pollJob(jobId) {
-    if (pollTimer) {
-      clearInterval(pollTimer);
-    }
-
-    pollTimer = setInterval(async () => {
-      try {
-        const response = await fetch(`/jobs/${jobId}`);
-        const metadata = await response.json();
-        jobStatusNode.textContent = metadata.status || "unknown";
-        jobStatusNode.className = metadata.status === "finished" ? "ok" : metadata.status === "failed" ? "error" : "";
-
-        if (metadata.status === "finished") {
-          clearInterval(pollTimer);
-          const resultResponse = await fetch(`/jobs/${jobId}/result`);
-          const result = await resultResponse.json();
-          showOutput(result);
-        } else if (metadata.status === "failed") {
-          clearInterval(pollTimer);
-          showOutput(metadata);
-        } else {
-          showOutput(metadata);
-        }
-      } catch (error) {
-        clearInterval(pollTimer);
-        jobStatusNode.textContent = "polling failed";
-        jobStatusNode.className = "error";
-        showOutput(String(error));
-      }
-    }, 1000);
   }
 
   dataFileSelect.addEventListener("change", () => {
@@ -725,8 +900,7 @@
   setTodayFilters();
   updateDataFilterMode();
   Promise.all([loadCommands(), loadDataFiles()]).catch((error) => {
-    jobStatusNode.textContent = "initialization failed";
-    jobStatusNode.className = "error";
+    renderCommandStatusCards([{ label: "Initialization", status: "failed" }]);
     showOutput(String(error));
   });
 </script>

@@ -7,7 +7,7 @@ COMMAND_CATALOG: List[Dict[str, Any]] = [
     {
         "name": "iwv",
         "label": "IWV",
-        "description": "Compute integrated water vapor products from a legacy data file.",
+        "description": "Compute integrated water vapor products from the selected data file.",
         "example": "iwv,2026011600,1",
         "parameters": [
             {
@@ -35,7 +35,7 @@ COMMAND_CATALOG: List[Dict[str, Any]] = [
     {
         "name": "opacity",
         "label": "Opacity",
-        "description": "Compute atmospheric opacity for a frequency from a legacy data file.",
+        "description": "Compute atmospheric opacity for a frequency from the selected data file.",
         "example": "opacity,2026011600,1,86.3",
         "parameters": [
             {
@@ -66,14 +66,14 @@ COMMAND_CATALOG: List[Dict[str, Any]] = [
                 "step": "any",
                 "placeholder": "86.3",
                 "example": "86.3",
-                "help": "Observing frequency used by the legacy opacity calculation.",
+                "help": "Observing frequency used by the opacity calculation.",
             },
         ],
     },
     {
         "name": "meteo",
         "label": "Meteo",
-        "description": "Extract meteorological values from a legacy data file.",
+        "description": "Extract meteorological values from the selected data file.",
         "example": "meteo,2026011600,1",
         "parameters": [
             {
@@ -101,7 +101,7 @@ COMMAND_CATALOG: List[Dict[str, Any]] = [
     {
         "name": "rain",
         "label": "Rain",
-        "description": "Extract rain information from a legacy data file.",
+        "description": "Extract rain information from the selected data file.",
         "example": "rain,2026011600,1",
         "parameters": [
             {
@@ -129,7 +129,7 @@ COMMAND_CATALOG: List[Dict[str, Any]] = [
     {
         "name": "tsys",
         "label": "Tsys",
-        "description": "Estimate system temperature from legacy atmospheric data and receiver parameters.",
+        "description": "Estimate system temperature from atmospheric data and receiver parameters.",
         "example": "tsys,2026011600,1,86.3,45.0,0.95,50.0",
         "parameters": [
             {
@@ -160,7 +160,7 @@ COMMAND_CATALOG: List[Dict[str, Any]] = [
                 "step": "any",
                 "placeholder": "86.3",
                 "example": "86.3",
-                "help": "Observing frequency used by the legacy calculation.",
+                "help": "Observing frequency used by the selected implementation.",
             },
             {
                 "name": "theta",
@@ -180,7 +180,7 @@ COMMAND_CATALOG: List[Dict[str, Any]] = [
                 "step": "any",
                 "placeholder": "0.95",
                 "example": "0.95",
-                "help": "Efficiency parameter used by the legacy calculation.",
+                "help": "Efficiency parameter used by the selected implementation.",
             },
             {
                 "name": "trec",
@@ -190,7 +190,7 @@ COMMAND_CATALOG: List[Dict[str, Any]] = [
                 "step": "any",
                 "placeholder": "50.0",
                 "example": "50.0",
-                "help": "Receiver temperature used by the legacy calculation.",
+                "help": "Receiver temperature used by the selected implementation.",
             },
         ],
     },

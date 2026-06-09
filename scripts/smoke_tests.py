@@ -3,7 +3,7 @@
 File: smoke_tests_final.py
 
 Purpose:
-    End-to-end smoke tests for the HTTP API and legacy operations.
+    End-to-end smoke tests for the HTTP API and current operations.
 
 Output style:
     - Clear start of each test
@@ -26,6 +26,11 @@ Optional environment variables:
     LEGACY_DATE=A2026011600
 
 Current expected legacy behavior with LEGACY_DATE=A2026011600:
+    - iwv single point: success
+    - opacity single point: success
+    - meteo single point: success
+    - rain single point: success
+    - tsys single point: success
     - legacy_iwv single point: success
     - legacy_iwv series: success
     - legacy_opacity single point: success
@@ -216,15 +221,14 @@ def test_core_valid_job_lifecycle(ctx: TestContext) -> None:
     )
 
     payload = {
-        "operation": "get_precipitable_water_vapor",
+        "operation": "iwv",
         "parameters": {
-            "timestamp": "2026-03-27T10:00:00Z",
-            "site_lat": 39.5,
-            "site_lon": 9.2,
+            "date": ctx.legacy_date,
+            "hour": 1,
         },
     }
 
-    step("Create standard job")
+    step("Create standard native Python job")
     response = post_json(ctx, "/jobs", payload)
     assert_equal(response.status_code, 202, "POST /jobs valid request")
     job_id = response.json().get("job_id")
@@ -238,46 +242,8 @@ def test_core_valid_job_lifecycle(ctx: TestContext) -> None:
 
     wait_for_completion(ctx, job_id, expected_final_status="finished")
 
-    result = fetch_result(ctx, job_id)
-    assert_true("result" in result, "Result response must contain result")
-
-
-def test_core_plot_generation(ctx: TestContext) -> None:
-    print_expectation(
-        [
-            "POST /jobs returns 202",
-            "job finishes successfully",
-            "metadata has_plot is true",
-            "/plot returns 200 and non-empty content",
-        ]
-    )
-
-    payload = {
-        "operation": "get_wind_profile",
-        "parameters": {
-            "timestamp": "2026-03-27T10:00:00Z",
-            "site_lat": 39.5,
-            "site_lon": 9.2,
-            "max_altitude_m": 2000,
-        },
-    }
-
-    step("Create plot job")
-    response = post_json(ctx, "/jobs", payload)
-    assert_equal(response.status_code, 202, "POST /jobs plot request")
-    job_id = response.json()["job_id"]
-
-    wait_for_completion(ctx, job_id, expected_final_status="finished")
-
-    step("Verify metadata")
-    meta_response = get_json(ctx, f"/jobs/{job_id}")
-    metadata = meta_response.json()
-    assert_true(metadata.get("has_plot") is True, "Finished plot job must have has_plot=true")
-
-    step("Fetch plot")
-    plot_response = requests.get(f"{ctx.base_url}/jobs/{job_id}/plot")
-    assert_equal(plot_response.status_code, 200, "GET /plot")
-    assert_true(len(plot_response.content) > 0, "Plot response must not be empty")
+    result = fetch_result(ctx, job_id)["result"]
+    assert_has_keys(result, ["iwv_mm", "ilw_mm", "zdd_m", "zwd_m", "q"], "Native iwv result must contain expected keys")
 
 
 def test_core_invalid_json(ctx: TestContext) -> None:
@@ -307,6 +273,71 @@ def test_core_job_not_found(ctx: TestContext) -> None:
     step("Read non-existing job")
     response = get_json(ctx, "/jobs/fake-id")
     assert_equal(response.status_code, 404, "Unknown job_id must return 404")
+
+
+
+def test_native_opacity_single_point_success(ctx: TestContext) -> None:
+    print_expectation(
+        [
+            "job finishes successfully",
+            "result has tau_np and tmean_k",
+        ]
+    )
+
+    job_id = create_job(ctx, "opacity", {"date": ctx.legacy_date, "hour": 1, "freq": 86.3})
+    wait_for_completion(ctx, job_id, expected_final_status="finished")
+    result = fetch_result(ctx, job_id)["result"]
+    assert_has_keys(result, ["tau_np", "tmean_k"], "opacity result must contain expected keys")
+
+
+def test_native_meteo_single_point_success(ctx: TestContext) -> None:
+    print_expectation(
+        [
+            "job finishes successfully",
+            "result has all expected meteo keys",
+        ]
+    )
+
+    job_id = create_job(ctx, "meteo", {"date": ctx.legacy_date, "hour": 1})
+    wait_for_completion(ctx, job_id, expected_final_status="finished")
+    result = fetch_result(ctx, job_id)["result"]
+    assert_has_keys(
+        result,
+        ["temperature_k", "dew_point_k", "relative_humidity_pct", "pressure_hpa", "u_wind_mps", "v_wind_mps"],
+        "meteo result must contain expected keys",
+    )
+
+
+def test_native_rain_single_point_success(ctx: TestContext) -> None:
+    print_expectation(
+        [
+            "job finishes successfully",
+            "result has rain_mm",
+        ]
+    )
+
+    job_id = create_job(ctx, "rain", {"date": ctx.legacy_date, "hour": 1})
+    wait_for_completion(ctx, job_id, expected_final_status="finished")
+    result = fetch_result(ctx, job_id)["result"]
+    assert_has_keys(result, ["rain_mm"], "rain result must contain rain_mm")
+
+
+def test_native_tsys_single_point_success(ctx: TestContext) -> None:
+    print_expectation(
+        [
+            "job finishes successfully",
+            "result has tsys_k and tsys2_k",
+        ]
+    )
+
+    job_id = create_job(
+        ctx,
+        "tsys",
+        {"date": ctx.legacy_date, "hour": 1, "freq": 86.3, "theta": 45.0, "eta": 0.95, "trec": 50.0},
+    )
+    wait_for_completion(ctx, job_id, expected_final_status="finished")
+    result = fetch_result(ctx, job_id)["result"]
+    assert_has_keys(result, ["tsys_k", "tsys2_k"], "tsys result must contain expected keys")
 
 
 def test_legacy_iwv_single_point_success(ctx: TestContext) -> None:
@@ -621,27 +652,30 @@ def main() -> int:
     print(f"  LEGACY_DATE={ctx.legacy_date}")
 
     tests: List[TestCase] = [
-        TestCase(1, "Core API | valid job lifecycle", test_core_valid_job_lifecycle),
-        TestCase(2, "Core API | plot generation", test_core_plot_generation),
-        TestCase(3, "Core API | invalid JSON", test_core_invalid_json),
-        TestCase(4, "Core API | unknown operation", test_core_unknown_operation),
-        TestCase(5, "Core API | job not found", test_core_job_not_found),
-        TestCase(6, "Operation | data catalog", test_data_catalog_job_success),
-        TestCase(7, "Web UI | page available", test_web_ui_available),
-        TestCase(8, "Legacy | iwv single-point success", test_legacy_iwv_single_point_success),
-        TestCase(9, "Legacy | iwv series success", test_legacy_iwv_series_success),
-        TestCase(10, "Legacy | opacity single-point success", test_legacy_opacity_single_point_success),
-        TestCase(11, "Legacy | opacity series success", test_legacy_opacity_series_success),
-        TestCase(12, "Legacy | meteo single-point success", test_legacy_meteo_single_point_success),
-        TestCase(13, "Legacy | meteo series success", test_legacy_meteo_series_success),
-        TestCase(14, "Legacy | rain single-point success", test_legacy_rain_single_point_success),
-        TestCase(15, "Legacy | missing legacy file expected failure", test_legacy_file_not_found_expected_failure),
-        TestCase(16, "Legacy | unsupported DB expected failure", test_legacy_db_not_found_expected_failure),
-        TestCase(17, "Legacy | epoch out-of-range expected failure", test_legacy_epoch_out_of_range_expected_failure),
-        TestCase(18, "Validation | missing freq for legacy_opacity", test_invalid_parameters_missing_freq_for_opacity),
-        TestCase(19, "Validation | invalid hour type for legacy_rain", test_invalid_parameter_type_for_rain),
-        TestCase(20, "Legacy | tsys single-point success", test_legacy_tsys_single_point_success),
-        TestCase(21, "Legacy | tsys series success", test_legacy_tsys_series_success),
+        TestCase(1, "Core API | valid native job lifecycle", test_core_valid_job_lifecycle),
+        TestCase(2, "Core API | invalid JSON", test_core_invalid_json),
+        TestCase(3, "Core API | unknown operation", test_core_unknown_operation),
+        TestCase(4, "Core API | job not found", test_core_job_not_found),
+        TestCase(5, "Operation | data catalog", test_data_catalog_job_success),
+        TestCase(6, "Web UI | page available", test_web_ui_available),
+        TestCase(7, "Python | opacity single-point success", test_native_opacity_single_point_success),
+        TestCase(8, "Python | meteo single-point success", test_native_meteo_single_point_success),
+        TestCase(9, "Python | rain single-point success", test_native_rain_single_point_success),
+        TestCase(10, "Python | tsys single-point success", test_native_tsys_single_point_success),
+        TestCase(11, "Legacy | iwv single-point success", test_legacy_iwv_single_point_success),
+        TestCase(12, "Legacy | iwv series success", test_legacy_iwv_series_success),
+        TestCase(13, "Legacy | opacity single-point success", test_legacy_opacity_single_point_success),
+        TestCase(14, "Legacy | opacity series success", test_legacy_opacity_series_success),
+        TestCase(15, "Legacy | meteo single-point success", test_legacy_meteo_single_point_success),
+        TestCase(16, "Legacy | meteo series success", test_legacy_meteo_series_success),
+        TestCase(17, "Legacy | rain single-point success", test_legacy_rain_single_point_success),
+        TestCase(18, "Legacy | missing legacy file expected failure", test_legacy_file_not_found_expected_failure),
+        TestCase(19, "Legacy | unsupported DB expected failure", test_legacy_db_not_found_expected_failure),
+        TestCase(20, "Legacy | epoch out-of-range expected failure", test_legacy_epoch_out_of_range_expected_failure),
+        TestCase(21, "Validation | missing freq for legacy_opacity", test_invalid_parameters_missing_freq_for_opacity),
+        TestCase(22, "Validation | invalid hour type for legacy_rain", test_invalid_parameter_type_for_rain),
+        TestCase(23, "Legacy | tsys single-point success", test_legacy_tsys_single_point_success),
+        TestCase(24, "Legacy | tsys series success", test_legacy_tsys_series_success),
     ]
 
     passed = 0

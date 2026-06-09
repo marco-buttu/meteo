@@ -10,10 +10,11 @@ from app.operations.schemas import OPERATION_CATALOG
 
 try:
     from app.operations.handlers.data_catalog import handle as handle_data_catalog
-    from app.operations.handlers.get_precipitable_water_vapor import handle as handle_get_precipitable_water_vapor
-    from app.operations.handlers.get_system_temperature_estimate import handle as handle_get_system_temperature_estimate
-    from app.operations.handlers.get_wind_profile import handle as handle_get_wind_profile
-    from app.operations.handlers.plot_opacity_timeseries import handle as handle_plot_opacity_timeseries
+    from app.operations.handlers.iwv import handle as handle_iwv
+    from app.operations.handlers.meteo import handle as handle_meteo
+    from app.operations.handlers.opacity import handle as handle_opacity
+    from app.operations.handlers.rain import handle as handle_rain
+    from app.operations.handlers.tsys import handle as handle_tsys
     from app.operations.handlers.legacy_passthrough import handle_legacy_iwv
     from app.operations.handlers.legacy_passthrough import handle_legacy_meteo
     from app.operations.handlers.legacy_passthrough import handle_legacy_opacity
@@ -37,10 +38,11 @@ def _build_handler_registry() -> Dict[str, OperationHandler]:
 
     return {
         "data": handle_data_catalog,
-        "get_precipitable_water_vapor": handle_get_precipitable_water_vapor,
-        "get_wind_profile": handle_get_wind_profile,
-        "get_system_temperature_estimate": handle_get_system_temperature_estimate,
-        "plot_opacity_timeseries": handle_plot_opacity_timeseries,
+        "iwv": handle_iwv,
+        "meteo": handle_meteo,
+        "opacity": handle_opacity,
+        "rain": handle_rain,
+        "tsys": handle_tsys,
         "legacy_iwv": handle_legacy_iwv,
         "legacy_opacity": handle_legacy_opacity,
         "legacy_meteo": handle_legacy_meteo,

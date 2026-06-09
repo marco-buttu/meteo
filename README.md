@@ -13,12 +13,12 @@ You can use this application to:
 - request an atmospheric or meteorological computation
 - wait for the computation to finish
 - read the result as JSON
-- retrieve a plot image for operations that produce one
+- retrieve a plot image if a future operation produces one
 
 The application currently supports both:
 
-- **native operations**
-- **legacy-compatible operations** exposed through the same API
+- **native Python operations**
+- **legacy Octave operations** exposed through the same API
 
 The repository includes three deployment entrypoints:
 
@@ -35,7 +35,17 @@ For deployment, start from:
 For the detailed native Linux deployment guide, see
 [Native Linux deployment with systemd](docs/deployment-native-linux.md).
 
-Current legacy-compatible operations:
+Current atmospheric operations are available in two implementations.
+
+Native Python operations:
+
+- `iwv`
+- `opacity`
+- `meteo`
+- `rain`
+- `tsys`
+
+Legacy Octave operations:
 
 - `legacy_iwv`
 - `legacy_opacity`
@@ -54,7 +64,7 @@ Before you can use the application, you need to install:
 - **Octave**
 - the Python packages listed in `requirements.txt`
 
-Octave is currently needed because some supported operations still rely on the existing legacy scientific backend.
+Octave is required only for the `legacy_*` operations. The native Python operations run without Octave.
 
 ---
 
@@ -115,7 +125,7 @@ redis-server --version
 
 ## 4. Install Octave
 
-Octave is currently required for the legacy-compatible scientific operations.
+Octave is required only for the `legacy_*` scientific operations.
 
 ### Ubuntu / Debian
 ```bash
@@ -688,9 +698,8 @@ This verifies things such as:
 - job creation
 - worker execution
 - result retrieval
-- plot generation
 - validation errors
-- legacy operation coverage
+- native and legacy operation coverage
 
 
 ---
@@ -705,19 +714,18 @@ First, define a base URL:
 export BASE_URL=http://127.0.0.1:5000
 ```
 
-## Step 1 — create a job
+### Step 1 - create a job
 
-Run this command:
+Use the plain operation name for the native Python implementation. For example:
 
 ```bash
 curl -sS -X POST "$BASE_URL/jobs" \
   -H 'Content-Type: application/json' \
   -d '{
-    "operation": "get_precipitable_water_vapor",
+    "operation": "iwv",
     "parameters": {
-      "timestamp": "2026-03-27T10:00:00Z",
-      "site_lat": 39.5,
-      "site_lon": 9.2
+      "date": "A2026011600",
+      "hour": 1
     }
   }'
 ```
@@ -731,19 +739,9 @@ A typical response looks like this:
 }
 ```
 
-Important: copy the value of `job_id`.
+Copy the returned `job_id`; it is used to check status and read the result.
 
-In this example, the job id is:
-
-```text
-job-1234567890abcdef
-```
-
-You will use that value in the next commands.
-
----
-
-## Step 2 — check the job status
+### Step 2 - check the job status
 
 Replace `job-1234567890abcdef` with the real `job_id` returned by your request:
 
@@ -751,31 +749,9 @@ Replace `job-1234567890abcdef` with the real `job_id` returned by your request:
 curl -sS "$BASE_URL/jobs/job-1234567890abcdef"
 ```
 
-A running job may look like this:
-
-```json
-{
-  "job_id": "job-1234567890abcdef",
-  "status": "started"
-}
-```
-
-A finished job may look like this:
-
-```json
-{
-  "job_id": "job-1234567890abcdef",
-  "status": "finished",
-  "has_result": true,
-  "has_plot": false
-}
-```
-
 If the job is still `queued` or `started`, wait a moment and run the command again.
 
----
-
-## Step 3 — get the result
+### Step 3 - get the result
 
 When the job status becomes `finished`, run:
 
@@ -783,57 +759,44 @@ When the job status becomes `finished`, run:
 curl -sS "$BASE_URL/jobs/job-1234567890abcdef/result"
 ```
 
-A typical result looks like this:
+A typical `iwv` result contains fields such as:
 
 ```json
 {
   "job_id": "job-1234567890abcdef",
-  "operation": "get_precipitable_water_vapor",
+  "operation": "iwv",
   "result": {
-    "pwv_mm": 2.3,
-    "quality": "good"
+    "iwv_mm": 12.345678,
+    "ilw_mm": 0.001234,
+    "zdd_m": 2.123456,
+    "zwd_m": 0.123456,
+    "q": 0.123456
   },
   "status": "finished"
 }
 ```
 
----
+### Native Python and Legacy Octave variants
 
-## Step 4 — get a plot, if the operation provides one
+Each atmospheric operation is available in two implementations. Use the plain
+name for the native Python implementation and the `legacy_` prefix for the
+Octave implementation.
 
-Some operations generate a plot.
-
-Example request:
+Native Python example:
 
 ```bash
 curl -sS -X POST "$BASE_URL/jobs" \
   -H 'Content-Type: application/json' \
   -d '{
-    "operation": "get_wind_profile",
+    "operation": "iwv",
     "parameters": {
-      "timestamp": "2026-03-27T10:00:00Z",
-      "site_lat": 39.5,
-      "site_lon": 9.2,
-      "max_altitude_m": 2000
+      "date": "A2026011600",
+      "hour": 1
     }
   }'
 ```
 
-When that job is finished, you can save the plot to a file:
-
-```bash
-curl -sS "$BASE_URL/jobs/JOB_ID/plot" --output plot.png
-```
-
-Replace `JOB_ID` with the real job id returned by the create-job request.
-
----
-
-## Example: legacy-compatible operation
-
-The same workflow applies to legacy-compatible operations.
-
-### Example: IWV
+Legacy Octave example:
 
 ```bash
 curl -sS -X POST "$BASE_URL/jobs" \
@@ -841,7 +804,7 @@ curl -sS -X POST "$BASE_URL/jobs" \
   -d '{
     "operation": "legacy_iwv",
     "parameters": {
-      "date": "A2024030112",
+      "date": "A2026011600",
       "hour": 1
     }
   }'
@@ -849,13 +812,15 @@ curl -sS -X POST "$BASE_URL/jobs" \
 
 ### Example: TSYS
 
+Native Python:
+
 ```bash
 curl -sS -X POST "$BASE_URL/jobs" \
   -H 'Content-Type: application/json' \
   -d '{
-    "operation": "legacy_tsys",
+    "operation": "tsys",
     "parameters": {
-      "date": "A2024030112",
+      "date": "A2026011600",
       "hour": 1,
       "freq": 86.3,
       "theta": 45.0,
@@ -865,7 +830,25 @@ curl -sS -X POST "$BASE_URL/jobs" \
   }'
 ```
 
-Then use the returned `job_id` exactly as shown in the first complete example:
+Legacy Octave:
+
+```bash
+curl -sS -X POST "$BASE_URL/jobs" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "operation": "legacy_tsys",
+    "parameters": {
+      "date": "A2026011600",
+      "hour": 1,
+      "freq": 86.3,
+      "theta": 45.0,
+      "eta": 0.95,
+      "trec": 50.0
+    }
+  }'
+```
+
+Then use the returned `job_id` as shown above:
 
 ```bash
 curl -sS "$BASE_URL/jobs/JOB_ID"
@@ -956,8 +939,9 @@ The application receives commands through Flask, creates asynchronous jobs,
 enqueues them through Redis/RQ, and delegates execution to a separate worker
 process.
 
-For legacy-compatible operations, the worker eventually executes an Octave
-script through `subprocess.run()`.
+For native Python operations, the worker calls Python handlers directly. For
+`legacy_*` operations, the worker executes the Octave backend through
+`subprocess.run()`.
 
 ---
 
@@ -974,26 +958,27 @@ The main components involved in the flow are:
 - `worker.py`: starts the RQ worker and defines the function executed by queued jobs.
 - `app/workers/job_worker.py`: orchestrates job execution.
 - `app/operations/registry.py`: maps operation names to their handlers.
-- `app/operations/handlers/legacy_passthrough.py`: contains handlers for legacy-compatible operations.
+- `app/operations/handlers/*.py`: contains native Python operation handlers.
+- `app/operations/handlers/legacy_passthrough.py`: contains handlers for legacy Octave operations.
 - `app/integrations/atm_ser_adapter.py`: builds and executes the Octave command.
 
 ---
 
 ### 1. HTTP request arrival
 
-For a legacy-compatible command, the client sends a request to:
+Clients normally submit operations through:
+
+```text
+POST /jobs
+```
+
+The compatibility endpoint remains available for textual legacy commands:
 
 ```text
 POST /legacy/command
 ```
 
-The request is received by Flask and routed to:
-
-```python
-create_legacy_job()
-```
-
-defined in:
+Both endpoints are defined in:
 
 ```text
 app/api/routes.py
@@ -1555,7 +1540,7 @@ Legacy handlers are defined in:
 app/operations/handlers/legacy_passthrough.py
 ```
 
-For legacy-compatible operations, the handler delegates the work to:
+For `legacy_*` operations, the handler delegates the work to:
 
 ```python
 run_atm_ser()
@@ -1748,7 +1733,7 @@ At the end, `run_atm_ser()` returns a standard structure:
 }
 ```
 
-For legacy-compatible operations, a JSON result is normally produced, while no plot is produced.
+For the current atmospheric operations, a JSON result is produced and no plot is produced.
 
 ---
 
@@ -1777,7 +1762,7 @@ The expected format is:
 
 At least one between `result` and `plot_bytes` must be present.
 
-For legacy-compatible operations, normally:
+For the current atmospheric operations, normally:
 
 ```python
 result != None
@@ -1808,7 +1793,7 @@ if output.plot_bytes is not None:
     self._storage.save_job_plot(job_id, output.plot_bytes)
 ```
 
-For the current legacy-compatible operations, `plot_bytes` is normally `None`.
+For the current atmospheric operations, `plot_bytes` is normally `None`.
 
 ---
 
@@ -1970,17 +1955,24 @@ This allows the HTTP server to respond quickly, while the real work is performed
 
 ## Current status
 
-The repository currently supports two families of operations.
+The repository currently supports the following operation families.
 
-### Native operations
+### Native Python atmospheric operations
 
 These are implemented directly in Python and follow the application architecture natively.
 
-### Legacy-compatible operations
+- `data`
+- `iwv`
+- `opacity`
+- `meteo`
+- `rain`
+- `tsys`
 
-These preserve the functional behavior of the historical atmospheric backend, but they are exposed through the same `/jobs` API and return structured JSON results.
+### Legacy Octave atmospheric operations
 
-Current legacy operations:
+These preserve the behavior of the historical atmospheric backend and are kept
+for compatibility and validation. They use the same `/jobs` protocol and return
+structured JSON results.
 
 - `legacy_iwv`
 - `legacy_opacity`
@@ -1988,7 +1980,9 @@ Current legacy operations:
 - `legacy_rain`
 - `legacy_tsys`
 
-The long-term direction of the project is to preserve the same public API while progressively replacing the current legacy backend implementation with native Python code.
+The native Python operations are intended to be the default implementation.
+The legacy operations remain available for comparison, debugging and backward
+compatibility.
 
 ---
 
@@ -2199,20 +2193,43 @@ In the UI:
 http://127.0.0.1:5000/ui
 ```
 
-users can filter available data by year, month and day. The default filter values
-are the current local day. When the user loads the available data, the UI creates
-a `data` job, waits for it to finish, and uses the job result to populate the data
-file selector.
+users can filter available data either by a single date or by a period.
 
-After selecting a file, the UI derives the legacy timestamp from the filename
+The UI supports these data selection modes:
+
+- single date: year, month and day;
+- period: from date/hour and to date/hour.
+
+When the user clicks **Load data**, the UI creates a `data` job, waits for it
+to finish, and uses the job result to populate the data file selector.
+
+The data request payload is shown in the expandable **Data request details**
+section.
+
+After selecting a file, the UI derives the timestamp from the filename
 automatically. For example:
 
 ```text
 2026011600.dat -> 2026011600
 ```
 
-The generated legacy command uses that timestamp internally, without exposing a
-manual timestamp input field in the normal UI.
+The command execution area lets the user choose the implementation:
+
+- Python;
+- Legacy Octave;
+- Both.
+
+If **Python** is selected, the UI sends one job using the plain operation name,
+for example `iwv`.
+
+If **Legacy Octave** is selected, the UI sends one job using the `legacy_`
+prefix, for example `legacy_iwv`.
+
+If **Both** is selected, the UI sends two jobs and shows separate request
+payloads, statuses and results for the Python and Legacy Octave implementations.
+
+The UI builds JSON job payloads internally and displays them in expandable
+technical details sections.
 
 The smoke test suite includes checks for both:
 
@@ -2395,3 +2412,331 @@ Removing the technical user is destructive because it can remove the user's home
 directory, including VirtualBox/Vagrant state owned by that user. Project tree
 permissions changed during host provisioning are not reverted automatically.
 
+
+## Native Python IWV, meteo, opacity, rain and tsys operations and legacy equivalence tests
+
+The legacy IWV command remains available as:
+
+```text
+legacy_iwv
+```
+
+A native Python implementation is also available as:
+
+```text
+iwv
+```
+
+Both operations use the same user-facing parameters:
+
+```json
+{
+  "operation": "iwv",
+  "parameters": {
+    "date": "A2026011600",
+    "hour": 1
+  }
+}
+```
+
+`legacy_iwv` uses the Octave/`atm_ser` backend. `iwv` reads the same Octave
+binary `mdata` files directly in Python and implements the IWV calculation that
+is performed by `iwvplot.m` and `pwl5.m`.
+
+The expected contract is that `iwv` and `legacy_iwv` behave the same from the
+API user's point of view. The implementation difference is internal.
+
+The legacy meteo command remains available as:
+
+```text
+legacy_meteo
+```
+
+A native Python implementation is also available as:
+
+```text
+meteo
+```
+
+Both operations use the same user-facing parameters:
+
+```json
+{
+  "operation": "meteo",
+  "parameters": {
+    "date": "A2026011600",
+    "hour": 1
+  }
+}
+```
+
+`legacy_meteo` uses the Octave/`atm_ser` backend. `meteo` reads the same Octave
+binary `mdata` files directly in Python and returns the same surface-level
+meteorological fields: temperature, dew point, relative humidity, pressure and
+wind components.
+
+The expected contract is that `meteo` and `legacy_meteo` behave the same from
+the API user's point of view. The implementation difference is internal.
+
+The legacy opacity command remains available as:
+
+```text
+legacy_opacity
+```
+
+A native Python implementation is also available as:
+
+```text
+opacity
+```
+
+Both operations use the same user-facing parameters:
+
+```json
+{
+  "operation": "opacity",
+  "parameters": {
+    "date": "A2026011600",
+    "hour": 1,
+    "freq": 86.3
+  }
+}
+```
+
+`legacy_opacity` uses the Octave/`atm_ser` backend. `opacity` reads the same
+Octave binary `mdata` files directly in Python and implements the opacity and
+radiative mean temperature calculations performed by `tauplot.m`, `Ka_freq2.m`
+and `Tmean.m`.
+
+The expected contract is that `opacity` and `legacy_opacity` behave the same
+from the API user's point of view. The implementation difference is internal.
+
+The legacy rain command remains available as:
+
+```text
+legacy_rain
+```
+
+A native Python implementation is also available as:
+
+```text
+rain
+```
+
+Both operations use the same user-facing parameters:
+
+```json
+{
+  "operation": "rain",
+  "parameters": {
+    "date": "A2026011600",
+    "hour": 1
+  }
+}
+```
+
+`legacy_rain` uses the Octave/`atm_ser` backend. `rain` reads the same Octave
+binary `mdata` files directly in Python and returns the cumulative rainfall
+field from `mdata.crain`, matching the behavior of `rainplot.m`/`atm_ser`.
+
+The expected contract is that `rain` and `legacy_rain` behave the same from the
+API user's point of view. The implementation difference is internal.
+
+The legacy tsys command remains available as:
+
+```text
+legacy_tsys
+```
+
+A native Python implementation is also available as:
+
+```text
+tsys
+```
+
+Both operations use the same user-facing parameters:
+
+```json
+{
+  "operation": "tsys",
+  "parameters": {
+    "date": "A2026011600",
+    "hour": 1,
+    "freq": 86.3,
+    "theta": 45.0,
+    "eta": 0.95,
+    "trec": 50.0
+  }
+}
+```
+
+`legacy_tsys` uses the Octave/`atm_ser` backend. `tsys` reads the same Octave
+binary `mdata` files directly in Python and implements the system temperature
+calculation performed in the `tsys` branch of `atm_ser`, using the same opacity
+and radiative mean temperature calculations used by the native `opacity`
+operation.
+
+The expected contract is that `tsys` and `legacy_tsys` behave the same from the
+API user's point of view. The implementation difference is internal.
+
+### IWV equivalence tests
+
+The equivalence tests compare `legacy_iwv` and `iwv` through the normal
+asynchronous API:
+
+```text
+POST /jobs
+GET /jobs/<job_id>
+GET /jobs/<job_id>/result
+```
+
+Install the test dependencies with:
+
+```bash
+python -m pip install -r tests/requirements.txt
+```
+
+Run the default IWV equivalence tests with:
+
+```bash
+pytest tests/equivalence/test_iwv_equivalence.py
+```
+
+The default configuration file is:
+
+```text
+tests/fixtures/equivalence_config.json
+```
+
+Use a custom configuration file with:
+
+```bash
+pytest tests/equivalence/test_iwv_equivalence.py \
+  --equivalence-config tests/fixtures/my_equivalence_config.json
+```
+
+The configuration file controls:
+
+```text
+base_url
+poll_timeout_seconds
+poll_interval_seconds
+http_timeout_seconds
+abs_tol
+rel_tol
+iwv.valid_cases
+iwv.all_valid_epochs_for_dates
+iwv.async_failure_cases
+iwv.request_validation_cases
+```
+
+For each configured date in `iwv.all_valid_epochs_for_dates`, the test first
+runs `legacy_iwv` with `hour=0`, reads the number of available epochs, and then
+compares every valid epoch from `hour=0` through `hour=N`.
+
+### Meteo equivalence tests
+
+The meteo equivalence tests compare `legacy_meteo` and `meteo` through the same
+asynchronous API.
+
+Run the default meteo equivalence tests with:
+
+```bash
+pytest tests/equivalence/test_meteo_equivalence.py
+```
+
+Run the full meteo equivalence tests with:
+
+```bash
+pytest tests/equivalence/test_meteo_equivalence.py \
+  --equivalence-config tests/fixtures/equivalence_config_full.json
+```
+
+The configuration file controls:
+
+```text
+meteo.valid_cases
+meteo.all_valid_epochs_for_dates
+meteo.async_failure_cases
+meteo.request_validation_cases
+```
+
+For each configured date in `meteo.all_valid_epochs_for_dates`, the full test
+first runs `legacy_meteo` with `hour=0`, reads the number of available epochs,
+and then compares every valid epoch from `hour=0` through `hour=N`.
+
+
+### Opacity equivalence tests
+
+The opacity equivalence tests compare `legacy_opacity` and `opacity` through the
+same asynchronous API.
+
+Run the default opacity equivalence tests with:
+
+```bash
+pytest tests/equivalence/test_opacity_equivalence.py
+```
+
+Run the full opacity equivalence tests with:
+
+```bash
+pytest tests/equivalence/test_opacity_equivalence.py   --equivalence-config tests/fixtures/equivalence_config_full.json
+```
+
+The configuration file controls:
+
+```text
+opacity.valid_cases
+opacity.all_valid_epochs_for_cases
+opacity.async_failure_cases
+opacity.request_validation_cases
+```
+
+For each configured case in `opacity.all_valid_epochs_for_cases`, the full test
+first runs `legacy_opacity` with `hour=0`, reads the number of available epochs,
+and then compares every valid epoch from `hour=0` through `hour=N` for the
+configured `date` and `freq`.
+
+
+### Rain equivalence tests
+
+The rain equivalence tests compare `legacy_rain` and `rain` through the same
+asynchronous API.
+
+Run the default rain equivalence tests with:
+
+```bash
+pytest tests/equivalence/test_rain_equivalence.py
+```
+
+Run the full rain equivalence tests with:
+
+```bash
+pytest tests/equivalence/test_rain_equivalence.py   --equivalence-config tests/fixtures/equivalence_config_full.json
+```
+
+The configuration file controls:
+
+```text
+rain.valid_cases
+rain.all_valid_epochs_for_dates
+rain.async_failure_cases
+rain.request_validation_cases
+```
+
+For each configured date in `rain.all_valid_epochs_for_dates`, the full test
+first runs `legacy_rain` with `hour=0`, reads the number of available epochs,
+and then compares every valid epoch from `hour=0` through `hour=N`.
+
+Run the default tsys equivalence tests with:
+
+```bash
+pytest tests/equivalence/test_tsys_equivalence.py
+```
+
+Run the full tsys equivalence tests with:
+
+```bash
+pytest tests/equivalence/test_tsys_equivalence.py \
+  --equivalence-config tests/fixtures/equivalence_config_full.json
+```
