@@ -257,6 +257,9 @@ confirm
 
 cd "${PROJECT_ROOT}"
 
+ok "Stopping existing VirtualBox VM before fresh deployment, if any"
+bash "${VAGRANT_RUNNER}" halt || true
+
 ok "Destroying existing Vagrant VM, if any"
 bash "${VAGRANT_RUNNER}" destroy -f || true
 

@@ -9,17 +9,17 @@ HOST_UNPROVISIONER="${PROJECT_ROOT}/scripts/host/provisioning/unprovision_host.s
 
 usage() {
   cat <<'USAGE'
-Usage: ./deploy.sh [target]
+Usage: ./admin.sh [target]
 
 Targets:
-  host-provision     Prepare the host for shared VM management. Must be run with sudo.
-  host-unprovision   Remove host provisioning artifacts. Must be run with sudo.
-  local              Deploy on the current Debian/Ubuntu/Linux Mint machine.
   virtualbox|vm      Create or provision a VirtualBox VM through Vagrant.
   vm-reinstall       Reinstall the app inside the existing VirtualBox VM.
   vm-fresh           Destroy and recreate the VirtualBox VM, then deploy again.
   vm-start           Start the existing VirtualBox VM without provisioning.
   vm-stop            Stop the existing VirtualBox VM.
+  host-provision     Prepare the host for shared VM management. Must be run with sudo.
+  host-unprovision   Remove host provisioning artifacts. Must be run with sudo.
+  local              Deploy on the current Debian/Ubuntu/Linux Mint machine.
   help               Show this help message.
 
 Common VirtualBox variables:
@@ -41,15 +41,14 @@ Common VirtualBox variables:
                      Set to 0 to skip.
 
 Examples:
-  sudo ./deploy.sh host-provision
-  sudo ./deploy.sh host-unprovision
-  ./deploy.sh local
-  ./deploy.sh virtualbox
-  ./deploy.sh vm-reinstall
-  ./deploy.sh vm-fresh
-  ./deploy.sh vm-start
-  ./deploy.sh vm-stop
-  ./deploy.sh docker
+  ./admin.sh virtualbox
+  ./admin.sh vm-reinstall
+  ./admin.sh vm-fresh
+  ./admin.sh vm-start
+  ./admin.sh vm-stop
+  sudo ./admin.sh host-provision
+  sudo ./admin.sh host-unprovision
+  ./admin.sh local
 USAGE
 }
 
@@ -113,10 +112,6 @@ run_target() {
       run_vagrant halt
       ok "VM stopped"
       ;;
-    docker)
-      [[ $# -eq 0 ]] || fail "Target ${target} does not accept extra arguments"
-      ok "Docker deployment is not implemented yet."
-      ;;
     -h|--help|help)
       usage
       exit 0
@@ -129,52 +124,47 @@ run_target() {
 
 show_menu() {
   cat <<'MENU'
-Meteo deployment manager
-========================
+Meteo application administration
+================================
 
-Host provisioning
------------------
-  p) Provision host for shared VM management
+VirtualBox / Vagrant installation
+---------------------------------
+  1) Deploy to VirtualBox VM
+     Shut down any existing VM first, then create/start the VM and run
+     the normal provisioning.
+
+  2) Reinstall app inside existing VM
+     Shut down the VM first, then keep the VM, Ubuntu, Redis and system
+     packages. Remove and reinstall only the app inside the VM.
+
+  3) Fresh VirtualBox VM deployment
+     Shut down and destroy the existing Vagrant VM, then create it again
+     from scratch.
+     Use this when you want a completely clean VM deployment.
+
+  4) Start existing VM
+     Start the VM without provisioning.
+
+  5) Stop existing VM
+     Shut down the VM.
+
+  6) Provision host for shared VM management
      Create/configure the technical Vagrant user, shared permissions and
      optional VM autostart service. Must be run with sudo.
 
-  u) Unprovisioning host (clean host provisioning)
+  7) Unprovision host
      Disable/remove the host VM autostart service and local Vagrant user
      configuration. Optionally remove the technical user. Must be run with sudo.
 
-Local machine
--------------
-  1) Deploy locally
+Local machine installation
+--------------------------
+  8) Deploy locally
      Install dependencies, set up the app, install systemd services,
      and start the app on this machine.
 
-VirtualBox / Vagrant
---------------------
-  2) Deploy to VirtualBox VM
-     Create or start the VM and run the normal provisioning.
-
-  3) Reinstall app inside existing VM
-     Keep the VM, Ubuntu, Redis and system packages.
-     Remove and reinstall only the app inside the VM.
-
-  4) Fresh VirtualBox VM deployment
-     Destroy the existing Vagrant VM and create it again from scratch.
-     Use this when you want a completely clean VM deployment.
-
-  5) Start existing VM
-     Start the VM without provisioning.
-
-  6) Stop existing VM
-     Shut down the VM.
-
-Docker
-------
-  7) Docker deployment
-     Not implemented yet.
-
 Other
 -----
-  q) Quit
+  0) Exit
 
 MENU
 }
@@ -188,15 +178,14 @@ show_menu
 read -r -p "Select an option: " selection
 
 case "${selection}" in
-  p|P) run_target host-provision ;;
-  u|U) run_target host-unprovision ;;
-  1) run_target local ;;
-  2) run_target virtualbox ;;
-  3) run_target vm-reinstall ;;
-  4) run_target vm-fresh ;;
-  5) run_target vm-start ;;
-  6) run_target vm-stop ;;
-  7) run_target docker ;;
-  q|Q) exit 0 ;;
+  1) run_target virtualbox ;;
+  2) run_target vm-reinstall ;;
+  3) run_target vm-fresh ;;
+  4) run_target vm-start ;;
+  5) run_target vm-stop ;;
+  6) run_target host-provision ;;
+  7) run_target host-unprovision ;;
+  8) run_target local ;;
+  0|q|Q) exit 0 ;;
   *) fail "Invalid selection: ${selection}" ;;
 esac

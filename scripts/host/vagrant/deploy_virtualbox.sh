@@ -57,11 +57,11 @@ Environment variables:
                      Default: .deployment/host-smoke-venv
 
 Examples:
-  HOST_DATA_DIR=/home/marco/wrf/data ./deploy.sh virtualbox
-  HOST_DATA_DIR=/home/marco/wrf/data HOST_APP_PORT=5001 ./deploy.sh virtualbox
-  HOST_DATA_DIR=/home/marco/wrf/data VM_NETWORK_MODE=nat HOST_APP_IP=192.168.1.50 ./deploy.sh virtualbox
-  HOST_DATA_DIR=/home/marco/wrf/data VM_NETWORK_MODE=static VM_STATIC_IP=192.168.140.45 ./deploy.sh virtualbox
-  HOST_DATA_DIR=/home/marco/wrf/data RUN_SMOKE_TESTS=0 ./deploy.sh virtualbox
+  HOST_DATA_DIR=/home/marco/wrf/data ./admin.sh virtualbox
+  HOST_DATA_DIR=/home/marco/wrf/data HOST_APP_PORT=5001 ./admin.sh virtualbox
+  HOST_DATA_DIR=/home/marco/wrf/data VM_NETWORK_MODE=nat HOST_APP_IP=192.168.1.50 ./admin.sh virtualbox
+  HOST_DATA_DIR=/home/marco/wrf/data VM_NETWORK_MODE=static VM_STATIC_IP=192.168.140.45 ./admin.sh virtualbox
+  HOST_DATA_DIR=/home/marco/wrf/data RUN_SMOKE_TESTS=0 ./admin.sh virtualbox
 
 The selected host data directory and VM network configuration are saved in
 .deployment/vagrant.env so that later commands such as `vagrant up` can reuse
@@ -414,6 +414,9 @@ else
   ok "Host app IP: ${HOST_APP_IP}"
   ok "Host app port: ${HOST_APP_PORT}"
 fi
+
+ok "Stopping existing VirtualBox VM before deployment, if any"
+bash "${VAGRANT_RUNNER}" halt || true
 
 bash "${VAGRANT_RUNNER}" up
 
