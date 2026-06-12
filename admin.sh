@@ -12,14 +12,14 @@ usage() {
 Usage: ./admin.sh [target]
 
 Targets:
-  local              Deploy on the current Debian/Ubuntu/Linux Mint machine.
-  host-provision     Prepare the host for shared VM management. Must be run with sudo.
-  host-unprovision   Remove host provisioning artifacts. Must be run with sudo.
   virtualbox|vm      Create or provision a VirtualBox VM through Vagrant.
   vm-reinstall       Reinstall the app inside the existing VirtualBox VM.
   vm-fresh           Destroy and recreate the VirtualBox VM, then deploy again.
   vm-start           Start the existing VirtualBox VM without provisioning.
   vm-stop            Stop the existing VirtualBox VM.
+  host-provision     Prepare the host for shared VM management. Must be run with sudo.
+  host-unprovision   Remove host provisioning artifacts. Must be run with sudo.
+  local              Deploy on the current Debian/Ubuntu/Linux Mint machine.
   help               Show this help message.
 
 Common VirtualBox variables:
@@ -41,14 +41,14 @@ Common VirtualBox variables:
                      Set to 0 to skip.
 
 Examples:
-  ./admin.sh local
-  sudo ./admin.sh host-provision
-  sudo ./admin.sh host-unprovision
   ./admin.sh virtualbox
   ./admin.sh vm-reinstall
   ./admin.sh vm-fresh
   ./admin.sh vm-start
   ./admin.sh vm-stop
+  sudo ./admin.sh host-provision
+  sudo ./admin.sh host-unprovision
+  ./admin.sh local
 USAGE
 }
 
@@ -127,40 +127,40 @@ show_menu() {
 Meteo application administration
 ================================
 
-Local machine installation
---------------------------
-  1) Deploy locally
-     Install dependencies, set up the app, install systemd services,
-     and start the app on this machine.
-
 VirtualBox / Vagrant installation
 ---------------------------------
-  2) Provision host for shared VM management
-     Create/configure the technical Vagrant user, shared permissions and
-     optional VM autostart service. Must be run with sudo.
-
-  3) Unprovision host
-     Disable/remove the host VM autostart service and local Vagrant user
-     configuration. Optionally remove the technical user. Must be run with sudo.
-
-  4) Deploy to VirtualBox VM
+  1) Deploy to VirtualBox VM
      Shut down any existing VM first, then create/start the VM and run
      the normal provisioning.
 
-  5) Reinstall app inside existing VM
+  2) Reinstall app inside existing VM
      Shut down the VM first, then keep the VM, Ubuntu, Redis and system
      packages. Remove and reinstall only the app inside the VM.
 
-  6) Fresh VirtualBox VM deployment
+  3) Fresh VirtualBox VM deployment
      Shut down and destroy the existing Vagrant VM, then create it again
      from scratch.
      Use this when you want a completely clean VM deployment.
 
-  7) Start existing VM
+  4) Start existing VM
      Start the VM without provisioning.
 
-  8) Stop existing VM
+  5) Stop existing VM
      Shut down the VM.
+
+  6) Provision host for shared VM management
+     Create/configure the technical Vagrant user, shared permissions and
+     optional VM autostart service. Must be run with sudo.
+
+  7) Unprovision host
+     Disable/remove the host VM autostart service and local Vagrant user
+     configuration. Optionally remove the technical user. Must be run with sudo.
+
+Local machine installation
+--------------------------
+  8) Deploy locally
+     Install dependencies, set up the app, install systemd services,
+     and start the app on this machine.
 
 Other
 -----
@@ -178,14 +178,14 @@ show_menu
 read -r -p "Select an option: " selection
 
 case "${selection}" in
-  1) run_target local ;;
-  2) run_target host-provision ;;
-  3) run_target host-unprovision ;;
-  4) run_target virtualbox ;;
-  5) run_target vm-reinstall ;;
-  6) run_target vm-fresh ;;
-  7) run_target vm-start ;;
-  8) run_target vm-stop ;;
+  1) run_target virtualbox ;;
+  2) run_target vm-reinstall ;;
+  3) run_target vm-fresh ;;
+  4) run_target vm-start ;;
+  5) run_target vm-stop ;;
+  6) run_target host-provision ;;
+  7) run_target host-unprovision ;;
+  8) run_target local ;;
   0|q|Q) exit 0 ;;
   *) fail "Invalid selection: ${selection}" ;;
 esac

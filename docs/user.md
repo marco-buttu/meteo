@@ -9,6 +9,8 @@ when the job is finished.
 
 ## Base URL
 
+Ask the system administrator for the actual service URL.
+
 In the examples below, the service is assumed to be reachable at:
 
 ```bash
