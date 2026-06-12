@@ -29,7 +29,7 @@ Options:
   -h, --help               Show this help message.
 
 This script must be run with sudo. Normal deployment should still be run without sudo:
-  ./deploy.sh virtualbox
+  ./admin.sh virtualbox
 USAGE
 }
 

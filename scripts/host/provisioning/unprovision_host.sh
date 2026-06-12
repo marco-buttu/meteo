@@ -178,7 +178,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 [[ "${EUID}" -eq 0 ]] || fail "Host unprovisioning must be run as root. Use sudo."
-[[ -f "${PROJECT_ROOT}/deploy.sh" ]] || fail "deploy.sh not found in project root: ${PROJECT_ROOT}"
+[[ -f "${PROJECT_ROOT}/admin.sh" ]] || fail "admin.sh not found in project root: ${PROJECT_ROOT}"
 
 stop_disable_remove_service
 remove_vagrant_user_env_file

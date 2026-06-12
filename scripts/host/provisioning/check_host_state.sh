@@ -17,7 +17,7 @@ require_root() {
 }
 
 require_project_root() {
-  [[ -f "${PROJECT_ROOT}/deploy.sh" ]] || fail "deploy.sh not found in project root: ${PROJECT_ROOT}"
+  [[ -f "${PROJECT_ROOT}/admin.sh" ]] || fail "admin.sh not found in project root: ${PROJECT_ROOT}"
   [[ -f "${PROJECT_ROOT}/Vagrantfile" ]] || fail "Vagrantfile not found in project root: ${PROJECT_ROOT}"
   ok "Project root: ${PROJECT_ROOT}"
 }

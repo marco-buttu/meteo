@@ -25,7 +25,7 @@ vagrant_run_user_is_configured() {
 ensure_vagrant_run_user_exists() {
   if vagrant_run_user_is_configured && ! id "${VAGRANT_RUN_USER}" >/dev/null 2>&1; then
     echo "[FAIL] Configured VAGRANT_RUN_USER does not exist: ${VAGRANT_RUN_USER}" >&2
-    echo "Run host provisioning first: sudo ./deploy.sh host-provision" >&2
+    echo "Run host provisioning first: sudo ./admin.sh host-provision" >&2
     exit 1
   fi
 }
