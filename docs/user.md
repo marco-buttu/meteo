@@ -12,7 +12,7 @@ when the job is finished.
 In the examples below, the service is assumed to be reachable at:
 
 ```bash
-export BASE_URL=http://127.0.0.1:5000
+export BASE_URL=http://192.168.140.45:5000
 ```
 
 Change this value if the administrator exposes the service on another host or
@@ -167,7 +167,7 @@ import time
 import requests
 
 
-BASE_URL = "http://127.0.0.1:5000"
+BASE_URL = "http://192.168.140.45:5000"
 
 
 def submit_job(operation, parameters):
@@ -328,7 +328,7 @@ plot. For these operations, the plot endpoint returns an error.
 A simple web UI is available at:
 
 ```text
-/ui
+BASE_URL/ui
 ```
 
 It is useful for manual checks. It uses the same asynchronous job protocol

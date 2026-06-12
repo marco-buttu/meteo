@@ -527,7 +527,7 @@ These tests exercise the running API. They are used by VM deployment unless
 Run them manually against a reachable API:
 
 ```bash
-BASE_URL=http://127.0.0.1:5000 python scripts/smoke_tests.py
+BASE_URL=http://192.168.140.45:5000 python scripts/smoke_tests.py
 ```
 
 ### Equivalence tests

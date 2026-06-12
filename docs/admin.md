@@ -236,7 +236,7 @@ mount point is:
 In NAT mode, the API is exposed through host port forwarding. The default URL is:
 
 ```text
-http://127.0.0.1:5000
+http://192.168.140.45:5000
 ```
 
 ### Reinstall app inside existing VM
@@ -365,7 +365,7 @@ HOST_DATA_DIR=/home/meteo/data HOST_APP_PORT=5001 ./admin.sh virtualbox
 The API is then reachable at:
 
 ```text
-http://127.0.0.1:5001
+http://192.168.140.45:5001
 ```
 
 Example static network deployment:
@@ -391,7 +391,7 @@ RUN_SMOKE_TESTS=0 ./admin.sh vm-reinstall
 Run smoke tests manually against a reachable API:
 
 ```bash
-BASE_URL=http://127.0.0.1:5000 python scripts/smoke_tests.py
+BASE_URL=http://192.168.140.45:5000 python scripts/smoke_tests.py
 ```
 
 ## Local uninstall
