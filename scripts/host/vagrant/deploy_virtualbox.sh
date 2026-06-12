@@ -415,6 +415,9 @@ else
   ok "Host app port: ${HOST_APP_PORT}"
 fi
 
+ok "Stopping existing VirtualBox VM before deployment, if any"
+bash "${VAGRANT_RUNNER}" halt || true
+
 bash "${VAGRANT_RUNNER}" up
 
 ok "VirtualBox deployment completed"

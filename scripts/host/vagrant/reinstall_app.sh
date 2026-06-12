@@ -111,7 +111,10 @@ load_saved_vagrant_env
 
 cd "${PROJECT_ROOT}"
 
-ok "Ensuring the VM is running without provisioning"
+ok "Stopping existing VirtualBox VM before reinstall, if any"
+bash "${VAGRANT_RUNNER}" halt || true
+
+ok "Starting the VM without provisioning"
 bash "${VAGRANT_RUNNER}" up --no-provision
 
 ok "Removing the existing application installation inside the VM"

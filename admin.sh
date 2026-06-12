@@ -144,14 +144,16 @@ VirtualBox / Vagrant installation
      configuration. Optionally remove the technical user. Must be run with sudo.
 
   4) Deploy to VirtualBox VM
-     Create or start the VM and run the normal provisioning.
+     Shut down any existing VM first, then create/start the VM and run
+     the normal provisioning.
 
   5) Reinstall app inside existing VM
-     Keep the VM, Ubuntu, Redis and system packages.
-     Remove and reinstall only the app inside the VM.
+     Shut down the VM first, then keep the VM, Ubuntu, Redis and system
+     packages. Remove and reinstall only the app inside the VM.
 
   6) Fresh VirtualBox VM deployment
-     Destroy the existing Vagrant VM and create it again from scratch.
+     Shut down and destroy the existing Vagrant VM, then create it again
+     from scratch.
      Use this when you want a completely clean VM deployment.
 
   7) Start existing VM
