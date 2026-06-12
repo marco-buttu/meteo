@@ -1,7 +1,7 @@
 # System Administration Guide
 
 This guide is for system administrators who need to install and operate the
-application. It treats the application as a black box.
+application.
 
 There are two installation scenarios:
 
@@ -62,7 +62,7 @@ Then select:
 1) Deploy locally
 ```
 
-Direct mode:
+Alternatively, you can use direct mode:
 
 ```bash
 ./admin.sh local
@@ -152,7 +152,7 @@ Then select:
 2) Provision host for shared VM management
 ```
 
-Direct mode:
+Alternatively, you can use direct mode:
 
 ```bash
 sudo ./admin.sh host-provision
@@ -184,7 +184,7 @@ Then select:
 3) Unprovision host
 ```
 
-Direct mode:
+Alternatively, you can use direct mode:
 
 ```bash
 sudo ./admin.sh host-unprovision
@@ -210,7 +210,7 @@ Then select:
 4) Deploy to VirtualBox VM
 ```
 
-Direct mode:
+Alternatively, you can use direct mode:
 
 ```bash
 ./admin.sh virtualbox
@@ -256,7 +256,7 @@ Then select:
 5) Reinstall app inside existing VM
 ```
 
-Direct mode:
+Alternatively, you can use direct mode:
 
 ```bash
 ./admin.sh vm-reinstall
@@ -281,7 +281,7 @@ Then select:
 6) Fresh VirtualBox VM deployment
 ```
 
-Direct mode:
+Alternatively, you can use direct mode:
 
 ```bash
 ./admin.sh vm-fresh
@@ -304,7 +304,7 @@ Then select:
 7) Start existing VM
 ```
 
-Direct mode:
+Alternatively, you can use direct mode:
 
 ```bash
 ./admin.sh vm-start
@@ -328,7 +328,7 @@ Then select:
 8) Stop existing VM
 ```
 
-Direct mode:
+Alternatively, you can use direct mode:
 
 ```bash
 ./admin.sh vm-stop
