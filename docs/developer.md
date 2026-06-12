@@ -3,9 +3,6 @@
 This guide is for developers who need to understand the current codebase and
 extend it.
 
-It documents the application as it exists in this repository. It does not
-describe components, test layers, or workflows that are not currently present.
-
 New commands must be implemented as native Python operations. The legacy Octave
 operations are kept for compatibility and comparison and are not extended.
 

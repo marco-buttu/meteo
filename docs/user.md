@@ -165,7 +165,6 @@ retrieve.
 
 ```python
 import time
-
 import requests
 
 
